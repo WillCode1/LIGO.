@@ -108,7 +108,7 @@ add_executable(ligo_mapping src/laserMapping.cpp
                 src/NMEA_Processing_fg.cpp src/NMEA_Assignment.cpp)
 target_link_libraries(ligo_mapping ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${CERES_LIBRARIES} ${OpenCV_LIBS} ${PYTHON_LIBRARIES} ceres gtsam)
 # target_link_libraries(ligo_mapping dw)
-# target_link_libraries(ligo_mapping ${Sophus_LIBRARIES} fmt)
+target_link_libraries(ligo_mapping ${Sophus_LIBRARIES} fmt)
 # target_include_directories(ligo_mapping PRIVATE ${PYTHON_INCLUDE_DIRS})
 
 
