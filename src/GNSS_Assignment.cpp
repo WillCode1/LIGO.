@@ -338,18 +338,21 @@ void GNSSAssignment::rinex2ephems(const std::string &rinex_filepath, std::map<ui
 
 void GNSSAssignment::processGNSSBase(const std::vector<ObsPtr> &gnss_meas, std::vector<double> &psr_meas, std::vector<ObsPtr> &valid_meas, std::vector<EphemBasePtr> &valid_ephems, bool gnss_ready, Eigen::Vector3d ecef_pos, double last_gnss_time_process)
 {
+  // 用于备份当前的观测数据和卫星星历
   std::vector<ObsPtr> backup_meas;
   std::vector<EphemBasePtr> backup_ephems;
   std::vector<double> backup_psr_meas;
   backup_meas.clear();
   backup_ephems.clear();
   backup_psr_meas.clear();
+  // 设置跟踪状态数组和阈值
   const int n = 20;
   bool diff_angle[n];
   std::fill(diff_angle, diff_angle + n, false);
   for (auto obs : gnss_meas)
   {
     // filter according to system
+    // 根据卫星的系统类型过滤观测数据
     uint32_t sys = satsys(obs->sat, NULL);
     if (sys != SYS_GPS && sys != SYS_GLO && sys != SYS_GAL && sys != SYS_BDS)
         continue;
@@ -365,18 +368,21 @@ void GNSSAssignment::processGNSSBase(const std::vector<ObsPtr> &gnss_meas, std::
     // printf("%f,%f,%f\n", obs->psr[freq_idx_], obs->dopp[freq_idx_] * LIGHT_SPEED / freq, LIGHT_SPEED / freq);
     // num_std++;
     // ave_std = double(num_std - 1) / double(num_std) * ave_std + 1 / double(num_std) * obs->psr_std[freq_idx_];
+    // 计算整数部分的电离层延迟差异
     double dis_integer = obs->cp[freq_idx_] * LIGHT_SPEED / freq - obs->psr[freq_idx_];
-    if (gnss_ready)
+    if (gnss_ready) // 如果GNSS已经准备好，进行更严格的标准差检查
     {
+        // 过滤掉信号质量差的观测
         if (obs->psr_std[freq_idx_]  > gnss_psr_std_threshold ||
             obs->dopp_std[freq_idx_] > gnss_dopp_std_threshold ||
             obs->cp_std[freq_idx_] > gnss_cp_std_threshold )
         {
-            sat_track_status[obs->sat] = 0;
+            sat_track_status[obs->sat] = 0; // 如果标准差过大，标记卫星为无效
             continue;
         }
         else
         {
+            // 如果卫星是第一次观测，则初始化相关数据
             if (sat_track_status.count(obs->sat) == 0)
             {
                 sat_track_status[obs->sat] = 0;
@@ -390,6 +396,7 @@ void GNSSAssignment::processGNSSBase(const std::vector<ObsPtr> &gnss_meas, std::
             }
             else
             {
+                // 更新卫星的跟踪状态
                 if (sat_track_status[obs->sat] == 0)
                 {
                     sat_track_status[obs->sat] = 0;
@@ -402,11 +409,12 @@ void GNSSAssignment::processGNSSBase(const std::vector<ObsPtr> &gnss_meas, std::
                     last_cp_meas[obs->sat] = obs->cp[freq_idx_] * LIGHT_SPEED / freq;
                 }
             }
-            ++ sat_track_status[obs->sat];
+            ++ sat_track_status[obs->sat]; // 增加卫星的跟踪状态计数
         }
     }
-    else
+    else // 如果GNSS还没准备好
     {
+        // 类似的处理逻辑：检查观测的标准差，如果过大则跳过
         if (obs->psr_std[freq_idx_]  > gnss_psr_std_threshold||
             obs->dopp_std[freq_idx_] > gnss_dopp_std_threshold ||
             obs->cp_std[freq_idx_] > gnss_cp_std_threshold)
@@ -416,6 +424,7 @@ void GNSSAssignment::processGNSSBase(const std::vector<ObsPtr> &gnss_meas, std::
         }
         else
         {
+            // 初始化和更新跟踪状态
             if (sat_track_status.count(obs->sat) == 0)
             {
                 sat_track_status[obs->sat] = 0;
@@ -446,6 +455,7 @@ void GNSSAssignment::processGNSSBase(const std::vector<ObsPtr> &gnss_meas, std::
         }
     }
     
+    // 电离层误差太大时，重置测量数据
     if (last_cp_meas[obs->sat] < 100)
     {
         sat_track_status[obs->sat] = 0;
@@ -454,6 +464,7 @@ void GNSSAssignment::processGNSSBase(const std::vector<ObsPtr> &gnss_meas, std::
     }
     else
     {
+    // 如果两次观测之间的时间差超过15秒，重新初始化
     if (obs_time - sat_track_last_time[obs->sat] > 15)
     {
         sat_track_status[obs->sat] = 1;
@@ -467,11 +478,13 @@ void GNSSAssignment::processGNSSBase(const std::vector<ObsPtr> &gnss_meas, std::
     }
     else
     {
+        // 如果跟踪状态大于1，进行进一步的电离层误差滤波
         if (sat_track_status[obs->sat] > 1) // problem!
         {
             // if (obs->status[freq_idx_])
             if (fabs(dis_integer) > 6 * sqrt(sum_d2 / sat_track_status[obs->sat] - sum_d * sum_d / sat_track_status[obs->sat] / sat_track_status[obs->sat])) // ?
             {
+                // 如果误差过大，重新初始化
                 sat_track_status[obs->sat] = 1;
                 sat_track_last_time[obs->sat] = obs_time;
                 sat_track_time[obs->sat] = obs_time;
@@ -483,6 +496,7 @@ void GNSSAssignment::processGNSSBase(const std::vector<ObsPtr> &gnss_meas, std::
             }
             else
             {
+                // 否则，更新电离层延迟误差和滤波结果
                 sum_d += dis_integer;
                 sum_d2 += dis_integer * dis_integer;
                 sat_track_last_time[obs->sat] = obs_time;
@@ -499,6 +513,7 @@ void GNSSAssignment::processGNSSBase(const std::vector<ObsPtr> &gnss_meas, std::
         }
     }
     }
+    // 获取卫星星历，如果还没有星历则跳过
     if (!ephem_from_rinex)
     {
       // if not got cooresponding ephemeris yet

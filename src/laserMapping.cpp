@@ -374,12 +374,12 @@ int main(int argc, char** argv)
         {
             sub_gnss_meas = nh.subscribe(gnss_meas_topic, 10000, gnss_meas_callback);
             
-            sub_rtk_lla_info = nh.subscribe(rtk_lla_topic, 1000, rtk_lla_callback);
+            sub_rtk_lla_info = nh.subscribe(rtk_lla_topic, 1000, rtk_lla_callback); // not used
         }
 
         if (p_gnss->p_assign->pvt_is_gt)
         {
-            sub_rtk_pvt_info = nh.subscribe(rtk_pvt_topic, 1000, rtk_pvt_callback);
+            sub_rtk_pvt_info = nh.subscribe(rtk_pvt_topic, 1000, rtk_pvt_callback); // 订阅rtk数据作为GT对比
         }
         else
         {
@@ -740,7 +740,7 @@ int main(int argc, char** argv)
                             }
                             angvel_avr<<imu_last.angular_velocity.x, imu_last.angular_velocity.y, imu_last.angular_velocity.z;
                             acc_avr   <<imu_last.linear_acceleration.x, imu_last.linear_acceleration.y, imu_last.linear_acceleration.z;
-                            if (imu_deque.empty()) break;
+                            // if (imu_deque.empty()) break;
                         }
                         if (GNSS_ENABLE)
                         {

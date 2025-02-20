@@ -42,7 +42,7 @@ gnss:
     ephem_from_rinex: false            # true: read ephem from rinex. false: get ephem from rosbag
     ephem_file_name: " "
     obs_from_rinex: false              # true: read gnss obs (e.g., pseudo range, doppler, carrier-phase) from rinex. false: get obs from rosbag
-    pvt_is_gt: false            # true: the rtk (ground truth) is solved online and saved in /ublox_driver/receiver_pvt topic. false: read rtk from local file  
+    pvt_is_gt: true            # true: the rtk (ground truth) is solved online and saved in /ublox_driver/receiver_pvt topic. false: read rtk from local file  
     gt_file_name: "gt_deg2.txt"
     gt_file_type: 1                    # 1: livox, 2: urban, 3: m2dgr
     outlier_rejection: true            # true: use robust function for gnss factors
@@ -53,8 +53,8 @@ gnss:
     gnss_glo_ephem_topic: "/ublox_driver/glo_ephem"       # GLONASS ephemeris
     gnss_iono_params_topic: "/ublox_driver/iono_params"   # GNSS broadcast ionospheric parameters
     gnss_tp_info_topic: "/ublox_driver/time_pulse_info"   # PPS time info
-    rtk_pvt_topic: "/ublox_driver/receiver_pvt"           # gnss pvt soln msg
-    rtk_lla_topic: "/ublox_driver/receiver_lla"           # nav sat fix
+    rtk_pvt_topic: "/ublox_driver/receiver_pvt"           # gnss pvt soln msg (GT)
+    rtk_lla_topic: "/ublox_driver/receiver_lla"           # nav sat fix (not used)
     gnss_elevation_thres: 30            # satellite elevation threshold (degree) 30
     gnss_psr_std_thres: 30.0            # pseudo-range std threshold
     gnss_dopp_std_thres: 30.0           # doppler std threshold

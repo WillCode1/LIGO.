@@ -571,11 +571,14 @@ bool GNSSProcess::GNSSLIAlign()
   return true;
 }
 
+// 更新GNSS统计信息并转换到ECEF坐标系
 void GNSSProcess::updateGNSSStatistics(Eigen::Vector3d &pos) // delete
 {
+  // 有激光雷达数据
   if (!nolidar)
   {
-    Eigen::Vector3d anc_cur;
+    // the extrinsic state of the local-world(ENU) frame to the ECEF frame in paper
+    Eigen::Vector3d anc_cur;                      // 参考点位置
     Eigen::Matrix3d R_enu_local_;
     // if (frame_num == 1)
     // {
@@ -587,6 +590,7 @@ void GNSSProcess::updateGNSSStatistics(Eigen::Vector3d &pos) // delete
       anc_cur = p_assign->isamCurrentEstimate.at<gtsam::Vector3>(E(0));
       R_enu_local_ = p_assign->isamCurrentEstimate.at<gtsam::Rot3>(P(0)).matrix();
     }
+    // 将ENU坐标系pos转换到ECEF坐标系
     Eigen::Vector3d enu_pos = R_enu_local_ * pos; // - anc_local);
     // R_ecef_enu = ecef2rotation(anc_cur);
     // ecef_pos = anc_cur + R_ecef_enu * enu_pos;
@@ -594,77 +598,105 @@ void GNSSProcess::updateGNSSStatistics(Eigen::Vector3d &pos) // delete
   }
   else
   {
+    // 如果没有激光雷达数据，直接将GNSS位置赋给ecef_pos
     ecef_pos = pos;
   }
 }
 
 void GNSSProcess::GnssPsrDoppMeas(const ObsPtr &obs_, const EphemBasePtr &ephem_) 
 {
+  // 获取观测数据中 L1 频率的值，并保存对应的频率索引
   freq = L1_freq(obs_, &freq_idx);
   LOG_IF(FATAL, freq < 0) << "No L1 observation found.";
 
+  // 获取卫星的系统类型（如 GPS, GLONASS, Galileo等）
   uint32_t sys = satsys(obs_->sat, NULL);
+  // 计算传播时间，即从卫星到接收器的传播延时（单位：秒）
   double tof = obs_->psr[freq_idx] / LIGHT_SPEED;
+  // 根据传播时间计算卫星的传输时间
   gtime_t sv_tx = time_add(obs_->time, -tof);
 
   if (sys == SYS_GLO)
   {
       GloEphemPtr glo_ephem = std::dynamic_pointer_cast<GloEphem>(ephem_);
+      // 计算卫星的传播延迟（svdt），并调整传输时间
       svdt = geph2svdt(sv_tx, glo_ephem);
       sv_tx = time_add(sv_tx, -svdt);
+      // 计算卫星的位置和速度
       sv_pos = geph2pos(sv_tx, glo_ephem, &svdt);
       sv_vel = geph2vel(sv_tx, glo_ephem, &svddt);
+      // GLONASS的TGD（卫星的群延迟）设为0.0（固定值）
       tgd = 0.0;
+      // 根据测量标准差计算位置的误差（单位：m）
       pr_uura = 2.0 * (obs_->psr_std[freq_idx]/0.16);
       dp_uura = 2.0 * (obs_->dopp_std[freq_idx]/0.256);
   }
   else
   {
       EphemPtr eph = std::dynamic_pointer_cast<Ephem>(ephem_);
-      svdt = eph2svdt(sv_tx, eph); // used in eva
+      // 计算卫星的传播延迟（svdt）
+      svdt = eph2svdt(sv_tx, eph); // 用于计算传播延迟
       sv_tx = time_add(sv_tx, -svdt);
-      sv_pos = eph2pos(sv_tx, eph, &svdt); // used in eva
-      sv_vel = eph2vel(sv_tx, eph, &svddt); // used in eva
+      // 计算卫星的位置
+      sv_pos = eph2pos(sv_tx, eph, &svdt); // 用于计算位置
+      // 计算卫星的速度
+      sv_vel = eph2vel(sv_tx, eph, &svddt); // 用于计算速度
+      // 提取卫星的群延迟（TGD），并进行修正
       tgd = eph->tgd[0];
+      // 如果是 Galileo 系统，根据 URA（伪距精度）和标准差计算误差
       if (sys == SYS_GAL)
       {
           pr_uura = (eph->ura - 2.0) * (obs_->psr_std[freq_idx]/0.16);
           dp_uura = (eph->ura - 2.0) * (obs_->dopp_std[freq_idx]/0.256);
       }
+      // 如果是其他系统（如 GPS），也根据 URA 和标准差计算误差
       else
       {
           pr_uura = (eph->ura - 1.0) * (obs_->psr_std[freq_idx]/0.16);
           dp_uura = (eph->ura - 1.0) * (obs_->dopp_std[freq_idx]/0.256);
       }
   }
-  LOG_IF(FATAL, pr_uura <= 0) << "pr_uura is " << pr_uura; // get those parameters mainly, both used in eva
-  LOG_IF(FATAL, dp_uura <= 0) << "dp_uura is " << dp_uura;
+  LOG_IF(FATAL, pr_uura <= 0) << "pr_uura is " << pr_uura; // 主要用于检测计算的伪距误差
+  LOG_IF(FATAL, dp_uura <= 0) << "dp_uura is " << dp_uura; // 主要用于检测计算的多普勒误差
   // relative_sqrt_info = 10;
 }
 
 void GNSSProcess::SvPosCals(const ObsPtr &obs_, const EphemBasePtr &ephem_) 
 {
+  // 获取 L1 频率的值，并计算频率索引
+  // `freq` 表示L1频率，`freq_idx` 是频率索引
   freq = L1_freq(obs_, &freq_idx);
   LOG_IF(FATAL, freq < 0) << "No L1 observation found.";
 
+  // 获取卫星的系统类型（GPS、GLONASS 等）
   uint32_t sys = satsys(obs_->sat, NULL);
+  // 根据 L1 频率的伪距（`psr`）计算信号传播时间（时间偏移）
   double tof = obs_->psr[freq_idx] / LIGHT_SPEED;
+  // 根据传播时间计算卫星的发射时间（`sv_tx`）
   gtime_t sv_tx = time_add(obs_->time, -tof);
 
   if (sys == SYS_GLO)
   {
       GloEphemPtr glo_ephem = std::dynamic_pointer_cast<GloEphem>(ephem_);
+      // 计算 GLONASS 卫星的时钟偏移（`svdt`）
       svdt = geph2svdt(sv_tx, glo_ephem);
+      // 根据时钟偏移修正卫星的发射时间
       sv_tx = time_add(sv_tx, -svdt);
+      // 计算卫星的位置（`sv_pos`）
       sv_pos = geph2pos(sv_tx, glo_ephem, &svdt);
+      // 计算卫星的速度（`sv_vel`）
       sv_vel = geph2vel(sv_tx, glo_ephem, &svddt);
   }
   else
   {
       EphemPtr eph = std::dynamic_pointer_cast<Ephem>(ephem_);
+      // 计算卫星的时钟偏移（`svdt`）
       svdt = eph2svdt(sv_tx, eph); // used in eva
+      // 根据时钟偏移修正卫星的发射时间
       sv_tx = time_add(sv_tx, -svdt);
+      // 计算卫星的位置（`sv_pos`）
       sv_pos = eph2pos(sv_tx, eph, &svdt); // used in eva
+      // 计算卫星的速度（`sv_vel`）
       sv_vel = eph2vel(sv_tx, eph, &svddt); // used in eva
   }
 }
