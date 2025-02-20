@@ -336,9 +336,17 @@ void GNSSAssignment::rinex2ephems(const std::string &rinex_filepath, std::map<ui
     }
 }
 
+// ### 代码解释：
+// 1. **初始化和清理：** 初始化了若干数组和变量，包括用于存储观测数据的备份、卫星系统的跟踪状态等。
+// 2. **GNSS测量数据遍历：** 遍历输入的每个GNSS测量数据，首先进行卫星系统过滤，只处理GPS、GLONASS、Galileo和BeiDou的测量。
+// 3. **GNSS准备状态下的处理：** 如果GNSS已经准备好，检查信号的质量标准差（如：伪距、载波频移、相位等），如果超出阈值则跳过该测量。否则，会更新卫星的跟踪状态，计算测量数据，进行电离层延迟滤波等操作。
+// 4. **卫星星历和数据更新：** 处理星历，确保每次观测都对应有效的星历数据，保存有效的测量数据。
 void GNSSAssignment::processGNSSBase(const std::vector<ObsPtr> &gnss_meas, std::vector<double> &psr_meas, std::vector<ObsPtr> &valid_meas, std::vector<EphemBasePtr> &valid_ephems, bool gnss_ready, Eigen::Vector3d ecef_pos, double last_gnss_time_process)
 {
   // 用于备份当前的观测数据和卫星星历
+  // valid_meas 存储最终通过筛选的观测数据。
+  // valid_ephems 存储对应的卫星星历。
+  // psr_meas 存储经过滤波的伪距测量值。
   std::vector<ObsPtr> backup_meas;
   std::vector<EphemBasePtr> backup_ephems;
   std::vector<double> backup_psr_meas;
@@ -513,29 +521,34 @@ void GNSSAssignment::processGNSSBase(const std::vector<ObsPtr> &gnss_meas, std::
         }
     }
     }
-    // 获取卫星星历，如果还没有星历则跳过
+    // 如果没有从Rinex文件中获取到对应的星历数据
     if (!ephem_from_rinex)
     {
-      // if not got cooresponding ephemeris yet
+      // 获取卫星星历，如果还没有星历则跳过
       if (sat2ephem.count(obs->sat) == 0)
-          continue;
+        continue; // 如果没有找到对应卫星的星历数据，跳过该观测
       
+      // 获取当前卫星的时间索引映射
       std::map<double, size_t> time2index = sat2time_index.at(obs->sat);
-      double ephem_time = EPH_VALID_SECONDS;
+      double ephem_time = EPH_VALID_SECONDS; // 设置有效的星历时间窗口
+      // 遍历时间索引，找到与当前观测时间最接近的星历时间
       for (auto ti : time2index)
       {
+          // 如果当前星历的时间和观测时间差距更小，则更新
           if (std::abs(ti.first - obs_time) < ephem_time)
           {
-              ephem_time = std::abs(ti.first - obs_time);
-              ephem_index = ti.second;
+              ephem_time = std::abs(ti.first - obs_time); // 更新时间差
+              ephem_index = ti.second;                    // 记录最接近的星历索引
           }
       }
+      // 如果没有找到有效的星历，则跳过该观测
       std::map<double, size_t>().swap(time2index);
       if (ephem_time >= EPH_VALID_SECONDS)
       {
           cerr << "ephemeris not valid anymore\n";
           continue;
       }
+      // 获取最合适的星历
       best_ephem_cur = sat2ephem.at(obs->sat).at(ephem_index);
     }
     else
@@ -576,18 +589,27 @@ void GNSSAssignment::processGNSSBase(const std::vector<ObsPtr> &gnss_meas, std::
       // filter by elevation angle
       if (gnss_ready) // && !quick_it) // gnss initialization is completed, then filter the sat by elevation angle // need to be defined
       {
+          // 计算卫星的 ECEF 位置
           Eigen::Vector3d sat_ecef;
           if (sys == SYS_GLO)
               sat_ecef = geph2pos(obs->time, std::dynamic_pointer_cast<GloEphem>(best_ephem), NULL);
           else
               sat_ecef = eph2pos(obs->time, std::dynamic_pointer_cast<Ephem>(best_ephem), NULL);
+          // 计算卫星方位角（Azimuth）和仰角（Elevation）
           double azel[2] = {0, M_PI/2.0};
         //   if (fabs((ecef_pos-sat_ecef).norm() - hatch_filter_meas[obs->sat]) > 3 * 1e6)
             //   continue;
           sat_azel(ecef_pos, sat_ecef, azel); // ecef_pos should be updated for this time step // coarse value is acceptable as well TODO
         //   std::cout << "check angle:" << azel[0] << ";" << azel[1] << std::endl;
+          // 仰角过滤
           if (azel[1] < gnss_elevation_threshold*M_PI/180.0)
               continue;
+          // 避免相同方向的多颗卫星
+          /*
+            计算方位角所属的 angle_id，每 0.314 弧度（约 18 度）划分一个方向区间。
+            如果该 angle_id 方向已经有卫星，则将当前卫星数据备份到 backup_meas，并跳过（continue）。
+            如果该方向尚未有卫星，标记 diff_angle[angle_id] = true，确保不会重复选取该方向的卫星。
+           */
           int angle_id = int(azel[0] / 0.314);
           if (diff_angle[angle_id])
           {
@@ -598,6 +620,7 @@ void GNSSAssignment::processGNSSBase(const std::vector<ObsPtr> &gnss_meas, std::
           }
           diff_angle[angle_id] = true;
       }
+      // 存储最终过滤结果
       psr_meas.push_back(hatch_filter_meas[obs->sat]); // obs->psr[freq_idx_]); // 
     //   obs->psr[freq_idx_] = hatch_filter_meas[obs->sat];
       valid_meas.push_back(obs);
