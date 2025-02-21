@@ -376,9 +376,9 @@ void GNSSAssignment::processGNSSBase(const std::vector<ObsPtr> &gnss_meas, std::
     // printf("%f,%f,%f\n", obs->psr[freq_idx_], obs->dopp[freq_idx_] * LIGHT_SPEED / freq, LIGHT_SPEED / freq);
     // num_std++;
     // ave_std = double(num_std - 1) / double(num_std) * ave_std + 1 / double(num_std) * obs->psr_std[freq_idx_];
-    // 计算整数部分的电离层延迟差异
+    // 计算的cp与psr距离差异(m) = N * (c/f) - pseudorange, 用于衡量当前的定位状态
     double dis_integer = obs->cp[freq_idx_] * LIGHT_SPEED / freq - obs->psr[freq_idx_];
-    if (gnss_ready) // 如果GNSS已经准备好，进行更严格的标准差检查
+    if (gnss_ready)
     {
         // 过滤掉信号质量差的观测
         if (obs->psr_std[freq_idx_]  > gnss_psr_std_threshold ||
@@ -404,7 +404,7 @@ void GNSSAssignment::processGNSSBase(const std::vector<ObsPtr> &gnss_meas, std::
             }
             else
             {
-                // 更新卫星的跟踪状态
+                // 更新卫星的跟踪状态，丢失后恢复
                 if (sat_track_status[obs->sat] == 0)
                 {
                     sat_track_status[obs->sat] = 0;
@@ -420,9 +420,8 @@ void GNSSAssignment::processGNSSBase(const std::vector<ObsPtr> &gnss_meas, std::
             ++ sat_track_status[obs->sat]; // 增加卫星的跟踪状态计数
         }
     }
-    else // 如果GNSS还没准备好
+    else
     {
-        // 类似的处理逻辑：检查观测的标准差，如果过大则跳过
         if (obs->psr_std[freq_idx_]  > gnss_psr_std_threshold||
             obs->dopp_std[freq_idx_] > gnss_dopp_std_threshold ||
             obs->cp_std[freq_idx_] > gnss_cp_std_threshold)
@@ -463,7 +462,7 @@ void GNSSAssignment::processGNSSBase(const std::vector<ObsPtr> &gnss_meas, std::
         }
     }
     
-    // 电离层误差太大时，重置测量数据
+    // cp失锁时，重置测量数据
     if (last_cp_meas[obs->sat] < 100)
     {
         sat_track_status[obs->sat] = 0;
@@ -526,7 +525,7 @@ void GNSSAssignment::processGNSSBase(const std::vector<ObsPtr> &gnss_meas, std::
     {
       // 获取卫星星历，如果还没有星历则跳过
       if (sat2ephem.count(obs->sat) == 0)
-        continue; // 如果没有找到对应卫星的星历数据，跳过该观测
+        continue;
       
       // 获取当前卫星的时间索引映射
       std::map<double, size_t> time2index = sat2time_index.at(obs->sat);
