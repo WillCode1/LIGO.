@@ -49,6 +49,7 @@ GNSSLIInitializer::GNSSLIInitializer(const std::vector<std::vector<ObsPtr>> &gns
     }
 }
 
+// 获取粗略的初始定位
 bool GNSSLIInitializer::coarse_localization(Eigen::Matrix<double, 7, 1> &result)
 {
     result.setZero();
