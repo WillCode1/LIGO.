@@ -49,7 +49,7 @@ GNSSLIInitializer::GNSSLIInitializer(const std::vector<std::vector<ObsPtr>> &gns
     }
 }
 
-// 获取粗略的初始定位
+// 获取粗略的初始定位+钟差
 bool GNSSLIInitializer::coarse_localization(Eigen::Matrix<double, 7, 1> &result)
 {
     result.setZero();
@@ -300,7 +300,7 @@ bool GNSSLIInitializer::yaw_refinement(const std::vector<Eigen::Vector3d> &local
         }
 
         std::vector<SatStatePtr> all_sat_states = sat_states(valid_obs, valid_ephems);
-        Eigen::Matrix<double, 7, 1> xyzt;
+        Eigen::Matrix<double, 7, 1> xyzt;   // xyz+四种钟差
         xyzt.setZero();
         double dx_norm = 1.0;
         uint32_t num_iter = 0;
