@@ -1188,7 +1188,7 @@ void GNSSProcess::SetInit()
     // cout << anc_ecef.transpose() << endl;
     p_assign->initialEstimate.insert(P(0), gtsam::Rot3(R_ecef_enu));
 
-    gtsam::PriorFactor<gtsam::Rot3> init_rot_ext(P(0), gtsam::Rot3(gtsam::Rot3(R_ecef_enu)), p_assign->priorextrotNoise);
+    gtsam::PriorFactor<gtsam::Rot3> init_rot_ext(P(0), gtsam::Rot3(R_ecef_enu), p_assign->priorextrotNoise);
     gtsam::PriorFactor<gtsam::Vector3> init_pos_ext(E(0), gtsam::Vector3(anc_ecef[0], anc_ecef[1], anc_ecef[2]), p_assign->priorextposNoise);
     // gtsam::PriorFactor<gtsam::Vector4> init_dt(B(0), gtsam::Vector4(para_rcv_dt[wind_size*4], para_rcv_dt[wind_size*4+1], para_rcv_dt[wind_size*4+2], para_rcv_dt[wind_size*4+3]), p_assign->priordtNoise);
     gtsam::PriorFactor<gtsam::Vector4> init_dt(B(0), gtsam::Vector4(para_rcv_dt[4*wind_size], para_rcv_dt[4*wind_size], para_rcv_dt[4*wind_size], para_rcv_dt[4*wind_size]), p_assign->priordtNoise);
