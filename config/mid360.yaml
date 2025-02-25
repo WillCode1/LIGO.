@@ -43,7 +43,7 @@ gnss:
     ephem_file_name: " "
     obs_from_rinex: false              # true: read gnss obs (e.g., pseudo range, doppler, carrier-phase) from rinex. false: get obs from rosbag
     pvt_is_gt: true            # true: the rtk (ground truth) is solved online and saved in /ublox_driver/receiver_pvt topic. false: read rtk from local file  
-    gt_file_name: "gt_deg2.txt"
+    gt_file_name: " "
     gt_file_type: 1                    # 1: livox, 2: urban, 3: m2dgr
     outlier_rejection: true            # true: use robust function for gnss factors
     psr_dopp_weight: 1 # 10
@@ -68,10 +68,10 @@ gnss:
     window_size: 10 # <= 10             # window size of GNSS observations used for intialization
     prior_noise: 1000 # 100             # factor cov for initial factors
     marg_noise: 0.1                     # factor cov for marginalized factors
-    odo_noise: 1 # 0.1 10                # factor cov for LiDAR-Inertial factors
-    grav_noise: 1.0 # 0.1 0.5           # factor cov for gravity factors
-    psr_dopp_noise: 1.0                # factor cov for pseudo-range factors
-    cp_noise: 0.01                       # factor cov for carrier-phase factors
+    odo_noise: 0.1 # 0.1 10             # factor cov for LiDAR-Inertial factors
+    grav_noise: 0.1 # 0.1 0.5           # factor cov for gravity factors
+    psr_dopp_noise: 1.0                 # factor cov for pseudo-range factors
+    cp_noise: 0.1                       # factor cov for carrier-phase factors
     gnss_ekf_noise: 0.01 # 0.1          # measurement cov for gnss in ekf of front-end
     gnss_local_online_sync: false                       # if perform online synchronization betwen GNSS and local time
     local_trigger_info_topic: "/external_trigger"       # external trigger info of the local sensor, if `gnss_local_online_sync` is true
