@@ -116,7 +116,7 @@ void GNSSProcess::inputpvt(double ts, double lat, double lon, double alt, int fl
     first_xyz_ecef_pvt = geo2ecef(lla);
     // first_lla_pvt << 22.609671,114.017229,98.401000;
     // first_xyz_ecef_pvt << -2397684.725162,5380932.949883,2436910.600325;
-    printf("first ecef xyz:%f,%f,%f\n",first_xyz_ecef_pvt(0),first_xyz_ecef_pvt(1),first_xyz_ecef_pvt(2));
+    printf("first ecef xyz 3:%f,%f,%f\n",first_xyz_ecef_pvt(0),first_xyz_ecef_pvt(1),first_xyz_ecef_pvt(2));
     printf("first lla:%f,%f,%f\n",first_lla_pvt(0),first_lla_pvt(1),first_lla_pvt(2));
   }
   Eigen::Vector3d xyz_ecef = geo2ecef(lla);

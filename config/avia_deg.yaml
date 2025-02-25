@@ -32,7 +32,7 @@ mapping:
     gravity: [0.0, 0.0, -9.81] # 
     init_with_imu: true
     gravity_init: [0.0, 9.810, 0.0] # preknown gravity in IMU frame. used when it is impossible to estimate it from acc measurements, i.e., init_with_imu is false
-    extrinsic_T: [-0.011, -0.02329, 0.04412] # mid360[0.04165, 0.02326, -0.0284] # avia # 
+    extrinsic_T: [0.04165, 0.02326, -0.0284] # avia # [-0.011, -0.02329, 0.04412] # mid360
     extrinsic_R: [1.0, 0.0, 0.0,
                     0.0, 1.0, 0.0,
                     0.0, 0.0, 1.0] # extrinsics of LiDAR to IMU represented in IMU frame
@@ -42,8 +42,8 @@ gnss:
     ephem_from_rinex: false            # true: read ephem from rinex. false: get ephem from rosbag
     ephem_file_name: " "
     obs_from_rinex: false              # true: read gnss obs (e.g., pseudo range, doppler, carrier-phase) from rinex. false: get obs from rosbag
-    pvt_is_gt: true            # true: the rtk (ground truth) is solved online and saved in /ublox_driver/receiver_pvt topic. false: read rtk from local file  
-    gt_file_name: " "
+    pvt_is_gt: false            # true: the rtk (ground truth) is solved online and saved in /ublox_driver/receiver_pvt topic. false: read rtk from local file  
+    gt_file_name: "gt_deg2.txt"
     gt_file_type: 1                    # 1: livox, 2: urban, 3: m2dgr
     outlier_rejection: true            # true: use robust function for gnss factors
     psr_dopp_weight: 1 # 10
@@ -68,16 +68,16 @@ gnss:
     window_size: 10 # <= 10             # window size of GNSS observations used for intialization
     prior_noise: 1000 # 100             # factor cov for initial factors
     marg_noise: 0.1                     # factor cov for marginalized factors
-    odo_noise: 0.1 # 0.1 10                # factor cov for LiDAR-Inertial factors
-    grav_noise: 0.1 # 0.1 0.5           # factor cov for gravity factors
-    psr_dopp_noise: 1.0                # factor cov for pseudo-range factors
-    cp_noise: 0.1                       # factor cov for carrier-phase factors
+    odo_noise: 1.0 # 0.1 10                # factor cov for LiDAR-Inertial factors
+    grav_noise: 0.10 # 0.1 0.5           # factor cov for gravity factors
+    psr_dopp_noise: 0.1                # factor cov for pseudo-range factors
+    cp_noise: 0.01                       # factor cov for carrier-phase factors
     gnss_ekf_noise: 0.01 # 0.1          # measurement cov for gnss in ekf of front-end
     gnss_local_online_sync: false                       # if perform online synchronization betwen GNSS and local time
     local_trigger_info_topic: "/external_trigger"       # external trigger info of the local sensor, if `gnss_local_online_sync` is true
     gnss_local_time_diff: 18.0 # 27.062                 # difference between GNSS and local time (s), if `gnss_local_online_sync` is false
     gnss_iono_default_parameters: [0.1118E-07,  0.2235E-07, -0.4172E-06,  0.6557E-06, 0.1249E+06, -0.4424E+06,  0.1507E+07, -0.2621E+06]
-    gnss_extrinsic_T: [0.011, 0.03155, 0.02365] # h360 [-0.39765, 0.13204, 0.0284] # m300 [0.0055, 0.03626, 0.02212] #m360 
+    gnss_extrinsic_T: [-0.39765, 0.13204, 0.0284] # m300 [0.011, 0.03155, 0.02365] # h360 [0.0055, 0.03626, 0.02212] #m360 
     gnss_extrinsic_R: [ 1, 0, 0,
                     0, 1, 0,
                     0, 0, 1 ]            # extrinsics of the GNSS receiver to IMU represented in IMU frame

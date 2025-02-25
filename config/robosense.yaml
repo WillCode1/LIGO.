@@ -38,7 +38,7 @@ mapping:
                   1, 0, 0 ] # extrinsics of LiDAR to IMU represented in IMU frame
 
 gnss:
-    gnss_enable: false # enable fuse GNSS
+    gnss_enable: true # enable fuse GNSS
     ephem_from_rinex: false # true: read ephem from rinex. false: get ephem from rosbag
     ephem_file_name: "BRDM00DLR_S_20221870000_01D_MN.rnx"
     obs_from_rinex: false # true: read gnss obs (e.g., pseudo range, doppler, carrier-phase) from rinex. false: get obs from rosbag
@@ -69,9 +69,9 @@ gnss:
     prior_noise: 1000 # 100 # factor cov for initial factors
     marg_noise: 0.1 # factor cov for marginalized factors
     odo_noise: 0.1 # 1 # factor cov for LiDAR-Inertial factors
-    grav_noise: 1.0 # 0.1 0.5 # factor cov for gravity factors
-    psr_dopp_noise: 10.0 # factor cov for pseudo-range factors
-    cp_noise: 0.1 # factor cov for carrier-phase factors
+    grav_noise: 0.1 # 0.1 0.5 # factor cov for gravity factors
+    psr_dopp_noise: 0.1 # factor cov for pseudo-range factors
+    cp_noise: 0.01 # factor cov for carrier-phase factors
     gnss_ekf_noise: 0.01 # measurement cov for gnss in ekf of front-end
     gnss_local_online_sync: false                       # if perform online synchronization betwen GNSS and local time
     local_trigger_info_topic: "/external_trigger"   # external trigger info of the local sensor, if `gnss_local_online_sync` is 1

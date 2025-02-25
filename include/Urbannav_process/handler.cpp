@@ -536,7 +536,7 @@ void PPPfromTXT(const std::string &ppp_filepath, std::vector<Eigen::Matrix<doubl
     ppp_file.close();
 }
 
-void inputpvt_urbannav(double ts, double lat, double lon, double alt, Eigen::Vector3d &first_lla_pvt, Eigen::Vector3d &first_xyz_ecef_pvt, std::vector<double> &pvt_time, 
+void inputpvt_lla(double ts, double lat, double lon, double alt, Eigen::Vector3d &first_lla_pvt, Eigen::Vector3d &first_xyz_ecef_pvt, std::vector<double> &pvt_time, 
                         std::vector<Eigen::Vector3d> &pvt_holder, std::vector<int> &diff_holder, std::vector<int> &float_holder) // 
 {
   Eigen::Vector3d lla; //, llh;
@@ -548,7 +548,7 @@ void inputpvt_urbannav(double ts, double lat, double lon, double alt, Eigen::Vec
     // first_lla_pvt << 22+18/60+4.31949/3600, 114+10/60+44.60559/3600, 3.472; // = lla;
     // std::cout << "first lla:" << first_lla_pvt.transpose() << std::endl;
     first_xyz_ecef_pvt = geo2ecef(first_lla_pvt); // geo2ecef(lla); // m_GNSS_Tools.llh2ecef(llh);
-    printf("first ecef xyz:%f,%f,%f\n",first_xyz_ecef_pvt(0),first_xyz_ecef_pvt(1),first_xyz_ecef_pvt(2));
+    printf("first ecef xyz 1:%f,%f,%f\n",first_xyz_ecef_pvt(0),first_xyz_ecef_pvt(1),first_xyz_ecef_pvt(2));
   }
   Eigen::Vector3d xyz_ecef = geo2ecef(lla); // m_GNSS_Tools.llh2ecef(llh);
 //   Eigen::Vector3d first_lla_pvt_ = m_GNSS_Tools.ecef2llh(first_xyz_ecef_pvt);
@@ -559,7 +559,7 @@ void inputpvt_urbannav(double ts, double lat, double lon, double alt, Eigen::Vec
   float_holder.push_back(2);
 }
 
-void inputpvt_urbannav_ecef(double ts, double ecef_x, double ecef_y, double ecef_z, Eigen::Vector3d &first_lla_pvt, Eigen::Vector3d &first_xyz_ecef_pvt, std::vector<double> &pvt_time, 
+void inputpvt_ecef(double ts, double ecef_x, double ecef_y, double ecef_z, Eigen::Vector3d &first_lla_pvt, Eigen::Vector3d &first_xyz_ecef_pvt, std::vector<double> &pvt_time, 
                         std::vector<Eigen::Vector3d> &pvt_holder, std::vector<int> &diff_holder, std::vector<int> &float_holder) // 
 {
   Eigen::Vector3d ecef; //, llh;
@@ -570,7 +570,7 @@ void inputpvt_urbannav_ecef(double ts, double ecef_x, double ecef_y, double ecef
     first_xyz_ecef_pvt = ecef; // m_GNSS_Tools.llh2ecef(llh);
     first_lla_pvt = ecef2geo(ecef);
     // std::cout << "first lla:" << first_lla_pvt.transpose() << std::endl;
-    printf("first ecef xyz:%f,%f,%f\n",first_xyz_ecef_pvt(0),first_xyz_ecef_pvt(1),first_xyz_ecef_pvt(2));
+    printf("first ecef xyz 2:%f,%f,%f\n",first_xyz_ecef_pvt(0),first_xyz_ecef_pvt(1),first_xyz_ecef_pvt(2));
     // std::cout << "first ecef xyz:" << first_xyz_ecef_pvt.transpose() << std::endl;
   }
 //   Eigen::Vector3d xyz_ecef = geo2ecef(lla); // m_GNSS_Tools.llh2ecef(llh);

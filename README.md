@@ -3,8 +3,11 @@
 **LIGO: Tightly Coupled LiDAR-Inertial-GNSS Odometry based on a Hierarchy Fusion Framework for Global Localization with Real-time Mapping**
 
 Code, paper, video are coming soon......
+instruction for using will be detailed soon
 
 Our paper is published on [TRO](https://github.com/Joanna-HE/LIGO./blob/main/paper/LIGO_A_Tightly_Coupled_LiDAR-Inertial-GNSS_Odometry_Based_on_a_Hierarchy_Fusion_Framework_for_Global_Localization_With_Real-Time_Mapping.pdf)
+
+Our datasets are uploaded on [Google Drive](https://drive.google.com/drive/folders/1hNwl8u8Pg-SqKh2N808XFixj6PjPf091?usp=sharing)
 
 # Developers:
 The codes of this repo are contributed by:
@@ -33,6 +36,8 @@ The codes of this repo are contributed by:
 
 ### GTSAM
 
+### Livox Driver
+
 ### [gnss_comm](https://github.com/HKUST-Aerial-Robotics/gnss_comm) with its [instuction](https://github.com/HKUST-Aerial-Robotics/gnss_comm#2-build-gnss_comm-library)
 
 ## Make
@@ -45,6 +50,7 @@ git clone https://github.com/Joanna-HE/LIGO..git
 ### compile the package
 ```
 cd ~/catkin_ws/
+source /PATH/TO/LIVOX_DRIVER/DEVEL/.setup.bash
 source /PATH/TO/GNSS_COMM/DEVEL/.setup.bash
 catkin_make
 source ~/catkin_ws/devel/setup.bash

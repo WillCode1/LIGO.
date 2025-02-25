@@ -69,7 +69,7 @@ gnss:
     prior_noise: 1000 # 100 # factor cov for initial factors
     marg_noise: 0.1 # factor cov for marginalized factors
     odo_noise: 0.1 # 1 # factor cov for LiDAR-Inertial factors
-    grav_noise: 1.0 # 0.1 0.5 # factor cov for gravity factors
+    grav_noise: 0.1 # 0.1 0.5 # factor cov for gravity factors
     psr_dopp_noise: 1.0 # factor cov for pseudo-range factors
     cp_noise: 0.1 # factor cov for carrier-phase factors
     gnss_ekf_noise: 0.01 # measurement cov for gnss in ekf of front-end

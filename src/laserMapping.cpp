@@ -397,10 +397,21 @@ int main(int argc, char** argv)
                 GtfromTXT_M2DGR(LOCAL_FILE_DIR(gt_fname), gt_holder);
             }
             std::cout << "check gt size:" << gt_holder.size() << std::endl;
-            for (size_t i = 0; i < gt_holder.size(); i++)
+            if (gt_file_type == M2DGR)
             {
-                inputpvt_urbannav(gt_holder[i][0], gt_holder[i][1], gt_holder[i][2], gt_holder[i][3], p_gnss->first_lla_pvt, p_gnss->first_xyz_ecef_pvt, p_gnss->pvt_time, 
-                        p_gnss->pvt_holder, p_gnss->diff_holder, p_gnss->float_holder); // 
+                for (size_t i = 0; i < gt_holder.size(); i++)
+                {
+                    inputpvt_ecef(gt_holder[i][0], gt_holder[i][1], gt_holder[i][2], gt_holder[i][3], p_gnss->first_lla_pvt, p_gnss->first_xyz_ecef_pvt, p_gnss->pvt_time, 
+                            p_gnss->pvt_holder, p_gnss->diff_holder, p_gnss->float_holder); // 
+                }
+            }
+            else
+            {
+                for (size_t i = 0; i < gt_holder.size(); i++)
+                {
+                    inputpvt_lla(gt_holder[i][0], gt_holder[i][1], gt_holder[i][2], gt_holder[i][3], p_gnss->first_lla_pvt, p_gnss->first_xyz_ecef_pvt, p_gnss->pvt_time, 
+                            p_gnss->pvt_holder, p_gnss->diff_holder, p_gnss->float_holder); // 
+                }
             }
         }
         sub_gnss_iono_params = nh.subscribe(gnss_iono_params_topic, 10000, gnss_iono_params_callback);
@@ -452,11 +463,21 @@ int main(int argc, char** argv)
         }
         // GtfromTXT_M2DGR(string("/home/joannahe/NewDisk/m2dgr/M2DGR-plus/gt/parking2.txt"), gt_urbannav_holder);
         // GtfromTXT_M2DGR(string("/home/joannahe/NewDisk/m2dgr/M2DGR-plus/gt/bridge2.txt"), gt_urbannav_holder);
-        
-        for (size_t i = 0; i < gt_holder.size(); i++)
+        if (gt_file_type == M2DGR)
         {
-            inputpvt_urbannav_ecef(gt_holder[i][0], gt_holder[i][1], gt_holder[i][2], gt_holder[i][3], p_gnss->first_lla_pvt, p_gnss->first_xyz_ecef_pvt, p_gnss->pvt_time, 
-                    p_gnss->pvt_holder, p_gnss->diff_holder, p_gnss->float_holder); // 
+            for (size_t i = 0; i < gt_holder.size(); i++)
+            {
+                inputpvt_ecef(gt_holder[i][0], gt_holder[i][1], gt_holder[i][2], gt_holder[i][3], p_gnss->first_lla_pvt, p_gnss->first_xyz_ecef_pvt, p_gnss->pvt_time, 
+                        p_gnss->pvt_holder, p_gnss->diff_holder, p_gnss->float_holder); // 
+            }
+        }
+        else
+        {
+            for (size_t i = 0; i < gt_holder.size(); i++)
+            {
+                inputpvt_lla(gt_holder[i][0], gt_holder[i][1], gt_holder[i][2], gt_holder[i][3], p_gnss->first_lla_pvt, p_gnss->first_xyz_ecef_pvt, p_gnss->pvt_time, 
+                        p_gnss->pvt_holder, p_gnss->diff_holder, p_gnss->float_holder); // 
+            }
         }
     }
     

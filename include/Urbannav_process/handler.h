@@ -160,9 +160,9 @@ double eleSRNVarCal(double ele, double snr);
 void GtfromTXT_URBAN(const std::string &gt_filepath, std::vector<Eigen::Vector4d> &gt);
 void GtfromTXT_M2DGR(const std::string &gt_filepath, std::vector<Eigen::Vector4d> &gt);
 void GtfromTXT_LIVOX(const std::string &gt_filepath, std::vector<Eigen::Vector4d> &gt);
-void inputpvt_urbannav(double ts, double lat, double lon, double alt, Eigen::Vector3d &first_lla_pvt, Eigen::Vector3d &first_xyz_ecef_pvt, std::vector<double> &pvt_time, 
+void inputpvt_lla(double ts, double lat, double lon, double alt, Eigen::Vector3d &first_lla_pvt, Eigen::Vector3d &first_xyz_ecef_pvt, std::vector<double> &pvt_time, 
                         std::vector<Eigen::Vector3d> &pvt_holder, std::vector<int> &diff_holder, std::vector<int> &float_holder);
-void inputpvt_urbannav_ecef(double ts, double ecef_x, double ecef_y, double ecef_z, Eigen::Vector3d &first_lla_pvt, Eigen::Vector3d &first_xyz_ecef_pvt, std::vector<double> &pvt_time, 
+void inputpvt_ecef(double ts, double ecef_x, double ecef_y, double ecef_z, Eigen::Vector3d &first_lla_pvt, Eigen::Vector3d &first_xyz_ecef_pvt, std::vector<double> &pvt_time, 
                         std::vector<Eigen::Vector3d> &pvt_holder, std::vector<int> &diff_holder, std::vector<int> &float_holder);
 int satno_rtk(int sys, int prn);
 int satsys_rtk(int sat, int *prn);

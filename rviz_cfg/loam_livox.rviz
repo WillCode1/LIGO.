@@ -17,7 +17,6 @@ Panels:
         - /Odometry1/Odometry1/Covariance1/Orientation1
         - /Path1
         - /MarkerArray1/Namespaces1
-        - /AerialMapDisplay1
       Splitter Ratio: 0.6432291865348816
     Tree Height: 1297
   - Class: rviz/Selection
@@ -300,24 +299,6 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: false
-    - Alpha: 0.699999988079071
-      Blocks: 3
-      Class: rviz_plugins/AerialMapDisplay
-      Draw Behind: false
-      Enabled: true
-      Map Frame: camera_init
-      Map transform type: NavSatFix Messages and Map Frame
-      Name: AerialMapDisplay
-      Object URI: https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1Ijoiam9hbm5haGVkaiIsImEiOiJjbHR1ZGdqNnExOHp3MmtyemgwZGZrc29sIn0.VV_3w9l8F7sHsXujOK3JXw
-      Topic: /laserMapping/gnss_fused_lla
-      UTM Frame: utm
-      UTM Zone: -1
-      Value: true
-      XY Reference: <NavSatFix Message>
-      Z Offset: 0
-      Z Reference: <NavSatFix Message>
-      Zoom: 16
-  Enabled: true
   Global Options:
     Background Color: 255; 255; 255
     Default Light: true
