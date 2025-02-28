@@ -728,7 +728,8 @@ int main(int argc, char** argv)
             {     
                 effct_feat_num = 0;
                 /**** point by point update ****/
-                if (time_seq.size() > 0) // || (!GNSS_ENABLE && !NMEA_ENABLE) ) // lidar,imu,gnss三种约束
+                // lidar,imu,gnss三种约束
+                if (time_seq.size() > 0) // || (!GNSS_ENABLE && !NMEA_ENABLE) )
                 {
                     if (GNSS_ENABLE)  
                     {p_gnss->p_assign->process_feat_num += time_seq.size();
@@ -1345,7 +1346,8 @@ int main(int argc, char** argv)
                     idx += time_seq[k];
                 }
                 }
-                else    // lidar退化,此时使用pre_integration积分得到需要的相对位姿变换
+                // lidar退化,此时使用pre_integration积分得到需要的相对位姿变换
+                else
                 {
                     if (GNSS_ENABLE)  p_gnss->nolidar_cur = true;
                     if (NMEA_ENABLE)  p_nmea->nolidar_cur = true;
