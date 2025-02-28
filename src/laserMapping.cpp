@@ -1345,7 +1345,7 @@ int main(int argc, char** argv)
                     idx += time_seq[k];
                 }
                 }
-                else    // lidar退化
+                else    // lidar退化,此时使用pre_integration积分得到需要的相对位姿变换
                 {
                     if (GNSS_ENABLE)  p_gnss->nolidar_cur = true;
                     if (NMEA_ENABLE)  p_nmea->nolidar_cur = true;
