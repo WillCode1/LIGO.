@@ -728,7 +728,7 @@ int main(int argc, char** argv)
             {     
                 effct_feat_num = 0;
                 /**** point by point update ****/
-                if (time_seq.size() > 0) // || (!GNSS_ENABLE && !NMEA_ENABLE) )
+                if (time_seq.size() > 0) // || (!GNSS_ENABLE && !NMEA_ENABLE) ) // lidar,imu,gnss三种约束
                 {
                     if (GNSS_ENABLE)  
                     {p_gnss->p_assign->process_feat_num += time_seq.size();
@@ -1345,7 +1345,7 @@ int main(int argc, char** argv)
                     idx += time_seq[k];
                 }
                 }
-                else
+                else    // lidar退化
                 {
                     if (GNSS_ENABLE)  p_gnss->nolidar_cur = true;
                     if (NMEA_ENABLE)  p_nmea->nolidar_cur = true;
