@@ -1,39 +1,48 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5)
 project(ligo)
 
-SET(CMAKE_BUILD_TYPE "Debug")
+# set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Release)
 
-ADD_COMPILE_OPTIONS(-std=c++17 )
-ADD_COMPILE_OPTIONS(-std=c++17 )
-set( CMAKE_CXX_FLAGS "-std=c++17 -O3" ) 
+set(CMAKE_CXX_FLAGS "-std=c++17 -O3")
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fexceptions")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -fexceptions -Wno-unused-local-typedefs -Wno-format-truncation -Wno-unused-result -Wno-pedantic -Wno-unused-parameter -Wno-unused-variable")
+
+# echo "/home/will/coredump/core-%e-%p-%s-%t" > /proc/sys/kernel/core_pattern
+# SET(CMAKE_BUILD_TYPE "Debug")
+# SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
+# SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 
 add_definitions(-DROOT_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/\")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fexceptions" )
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -pthread -std=c++0x -std=c++17 -fexceptions")
-
 message("Current CPU archtecture: ${CMAKE_SYSTEM_PROCESSOR}")
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)" )
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)|(aarch32)|(AARCH32)|(aarch64)|(AARCH64)")
   include(ProcessorCount)
   ProcessorCount(N)
   message("Processer number:  ${N}")
-  if(N GREATER 5)
+  if(N GREATER 6)
     add_definitions(-DMP_EN)
     add_definitions(-DMP_PROC_NUM=4)
-    message("core for MP:  3")
-  elseif(N GREATER 3)
-    math(EXPR PROC_NUM "${N} - 2")
+    add_definitions(-DBNB_PROC_NUM=6)
+    message("core for MP: 4")
+  elseif(N GREATER 4)
     add_definitions(-DMP_EN)
-    add_definitions(-DMP_PROC_NUM="${PROC_NUM}")
-    message("core for MP:  ${PROC_NUM}")
+    add_definitions(-DMP_PROC_NUM=4)
+    add_definitions(-DBNB_PROC_NUM=4)
+    message("core for MP: 4")
+  elseif(N GREATER 3)
+    add_definitions(-DMP_EN)
+    add_definitions(-DMP_PROC_NUM=3)
+    add_definitions(-DBNB_PROC_NUM=3)
+    message("core for MP: 3")
   else()
     add_definitions(-DMP_PROC_NUM=1)
+    add_definitions(-DBNB_PROC_NUM=2)
   endif()
 else()
   add_definitions(-DMP_PROC_NUM=1)
+  add_definitions(-DBNB_PROC_NUM=2)
 endif()
 
 find_package(OpenMP QUIET)
@@ -65,6 +74,7 @@ find_package(GTSAM REQUIRED QUIET)
 find_package(PCL 1.8 REQUIRED)
 find_package(Ceres REQUIRED)
 find_package(Sophus REQUIRED)
+find_package(Boost REQUIRED COMPONENTS serialization timer thread chrono)
 
 message(Eigen: ${EIGEN3_INCLUDE_DIR})
 
@@ -72,7 +82,9 @@ include_directories(
 	${catkin_INCLUDE_DIRS} 
   ${EIGEN3_INCLUDE_DIR}
   ${PCL_INCLUDE_DIRS}
-	${GTSAM_INCLUDE_DIR}
+  ${Boost_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
+  ${GTSAM_INCLUDE_DIR}
   ${CERES_INCLUDE_DIRS}
   ${PYTHON_INCLUDE_DIRS}
   include)
@@ -105,8 +117,9 @@ add_executable(ligo_mapping src/laserMapping.cpp
                 include/Urbannav_process/handler.cpp
                 src/li_initialization.cpp src/parameters.cpp src/preprocess.cpp src/Estimator.cpp 
                 src/IMU_Processing.cpp src/GNSS_Processing_fg.cpp src/GNSS_Initialization.cpp src/GNSS_Assignment.cpp
-                src/NMEA_Processing_fg.cpp src/NMEA_Assignment.cpp)
-target_link_libraries(ligo_mapping ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${CERES_LIBRARIES} ${OpenCV_LIBS} ${PYTHON_LIBRARIES} ceres gtsam)
+                src/NMEA_Processing_fg.cpp src/NMEA_Assignment.cpp
+                include/backend_optimization/global_localization/scancontext/Scancontext.cpp)
+target_link_libraries(ligo_mapping ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${CERES_LIBRARIES} ${OpenCV_LIBS} ${PYTHON_LIBRARIES} ceres gtsam stdc++fs)
 # target_link_libraries(ligo_mapping dw)
 target_link_libraries(ligo_mapping ${Sophus_LIBRARIES} fmt)
 # target_include_directories(ligo_mapping PRIVATE ${PYTHON_INCLUDE_DIRS})

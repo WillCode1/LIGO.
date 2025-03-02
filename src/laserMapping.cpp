@@ -51,6 +51,14 @@
 #include <opencv2/opencv.hpp>
 #include "chi-square.h"
 // #include <ros/console.h>
+#define PGO
+#ifdef PGO
+#include "backend_optimization/interface_ros1.h"
+#include "backend_optimization/pgo/Backend.hpp"
+
+FILE *location_log = nullptr;
+Backend backend;
+#endif
 
 
 #define PUBFRAME_PERIOD     (20)
@@ -289,6 +297,26 @@ void publish_path(const ros::Publisher pubPath)
     }
 }        
 
+#ifdef PGO
+template <typename T>
+void state2pose(PointXYZIRPYT &this_pose6d, const T &state)
+{
+    // imu pose -> lidar pose
+    M3D lidar_rot;
+    V3D lidar_pos;
+    poseTransformFrame(state.rot, state.pos, Lidar_R_wrt_IMU, Lidar_T_wrt_IMU, lidar_rot, lidar_pos);
+
+    Eigen::Vector3d eulerAngle = EigenMath::RotationMatrix2RPY(lidar_rot);
+    this_pose6d.x = lidar_pos(0); // x
+    this_pose6d.y = lidar_pos(1); // y
+    this_pose6d.z = lidar_pos(2); // z
+    this_pose6d.roll = eulerAngle(0);  // roll
+    this_pose6d.pitch = eulerAngle(1); // pitch
+    this_pose6d.yaw = eulerAngle(2);   // yaw
+    this_pose6d.time = lidar_end_time;
+}
+#endif
+
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "laserMapping");
@@ -351,6 +379,14 @@ int main(int argc, char** argv)
     kf_output.change_P(P_init_output);
     Eigen::Matrix<double, 24, 24> Q_output = process_noise_cov_output();
     open_file();
+#ifdef PGO
+    backend.save_resolution = 0.2;
+    backend.map_path = PCD_FILE_DIR("");
+    backend.save_keyframe_en = true;
+    backend.backend->keyframe_add_dist_threshold = 1.f;
+    backend.backend->keyframe_add_angle_threshold = 0.2f;
+    backend.init_system_mode();
+#endif
 
     /*** ROS subscribe initialization ***/
     ros::Subscriber sub_pcl = p_pre->lidar_type == AVIA ? \
@@ -1764,7 +1800,18 @@ int main(int argc, char** argv)
             if (path_en)                         publish_path(pubPath);
             if (scan_pub_en || pcd_save_en)      publish_frame_world(pubLaserCloudFullRes);
             if (scan_pub_en && scan_body_pub_en) publish_frame_body(pubLaserCloudFullRes_body);
-            
+
+#ifdef PGO
+            PointCloudXYZI::Ptr feats_undistort_real(new PointCloudXYZI());
+            feats_undistort_real->resize(feats_down_world->size());
+            for (int j = 0; j < feats_down_world->size(); j++)
+            {
+                pointWorldToBody(&feats_down_world->points[j], &feats_undistort_real->points[j]);
+            }
+            PointXYZIRPYT this_pose6d;
+            state2pose(this_pose6d, kf_output.x_);
+            backend.run(this_pose6d, feats_undistort_real);
+#endif
             /*** Debug variables Logging ***/
             if (runtime_pos_log)
             {
@@ -1793,6 +1840,11 @@ int main(int argc, char** argv)
         loop_rate.sleep();
     }
     fout_out.close();
+
+#ifdef PGO
+    backend.save_trajectory();
+    backend.save_globalmap();
+#endif
     //--------------------------save map-----------------------------------
     /* 1. make sure you have enough memories
     /* 2. noted that pcd save will influence the real-time performences **/

@@ -94,4 +94,7 @@ void pointBodyToWorld(PointType const * const pi, PointType * const po);
 
 void update_map();
 
+#if 1
+void pointWorldToBody(PointType const * const pi, PointType * const po);
+#endif
 #endif

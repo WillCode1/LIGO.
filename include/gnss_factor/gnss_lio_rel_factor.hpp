@@ -44,7 +44,7 @@
 #include <gtsam/inference/Symbol.h>
 #include <gtsam/base/Vector.h>
 using namespace gnss_comm;
-#define PI  3.1415926535897932384626433832795
+#define MY_PI  3.1415926535897932384626433832795
 
 namespace ligo {
 
@@ -106,13 +106,13 @@ class GnssLioFactor : public gtsam::NoiseModelFactor6<gtsam::Rot3, gtsam::Vector
             double tan_lat = s1 / s2;
             // double sin_lat = s1 / h;
             // double cos_lat = s2 / h;
-            double lat = atan(tan_lat) - PI / 2;
+            double lat = atan(tan_lat) - MY_PI / 2;
             // double lat_deg = lat * R2D;
 
             // double N = a2 * pow((a2 * cos_lat * cos_lat + b2 * sin_lat * sin_lat), -0.5);
             // double altM = p / cos_lat - N;
 
-            double lon = atan2(xyz.y(), xyz.x()) + PI / 2;
+            double lon = atan2(xyz.y(), xyz.x()) + MY_PI / 2;
             double deci2 = xyz.z() * xyz.z() * a2 + p2 * b2;
             double deci = sqrt(deci2);
             // double lon_deg = lon * R2D;
