@@ -581,6 +581,9 @@ int main(int argc, char** argv)
         ros::spinOnce();
         if(sync_packages(Measures, p_gnss->gnss_msg, p_nmea->nmea_msg)) 
         {
+#ifdef PGO
+            Timer timer;
+#endif
             if (flg_reset)
             {
                 ROS_WARN("reset when rosbag play back");
@@ -1795,6 +1798,9 @@ int main(int argc, char** argv)
                 MapIncremental();
             }
 
+#ifdef PGO
+            LOG_INFO("location valid. feats_down = %lu, cost time = %.1fms.", feats_down_world->size(), timer.elapsedLast());
+#endif
             t5 = omp_get_wtime();
             /******* Publish points *******/
             if (path_en)                         publish_path(pubPath);
