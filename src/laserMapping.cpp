@@ -51,14 +51,6 @@
 #include <opencv2/opencv.hpp>
 #include "chi-square.h"
 // #include <ros/console.h>
-#define PGO
-#ifdef PGO
-#include "backend_optimization/interface_ros1.h"
-#include "backend_optimization/pgo/Backend.hpp"
-
-FILE *location_log = nullptr;
-Backend backend;
-#endif
 
 
 #define PUBFRAME_PERIOD     (20)
@@ -324,6 +316,9 @@ int main(int argc, char** argv)
     ros::AsyncSpinner spinner(0);
     spinner.start();
     readParameters(nh);
+#ifdef PGO
+    backend.init_system_mode();
+#endif
     cout<<"lidar_type: "<<lidar_type<<endl;
     ivox_ = std::make_shared<IVoxType>(ivox_options_);
     ivox_last_ = std::make_shared<IVoxType>(ivox_options_); //(*ivox_);
@@ -379,14 +374,6 @@ int main(int argc, char** argv)
     kf_output.change_P(P_init_output);
     Eigen::Matrix<double, 24, 24> Q_output = process_noise_cov_output();
     open_file();
-#ifdef PGO
-    backend.save_resolution = 0.2;
-    backend.map_path = PCD_FILE_DIR("");
-    backend.save_keyframe_en = true;
-    backend.backend->keyframe_add_dist_threshold = 1.f;
-    backend.backend->keyframe_add_angle_threshold = 0.2f;
-    backend.init_system_mode();
-#endif
 
     /*** ROS subscribe initialization ***/
     ros::Subscriber sub_pcl = p_pre->lidar_type == AVIA ? \

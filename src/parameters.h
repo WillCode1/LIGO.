@@ -63,6 +63,12 @@
 #include <geometry_msgs/Vector3.h>
 #include <Curvefitter/curvefitter.hpp>
 
+#define PGO
+#ifdef PGO
+#include "backend_optimization/pgo/Backend.hpp"
+extern Backend backend;
+#endif
+
 using IVoxType = faster_lio::IVox<3, faster_lio::IVoxNodeType::DEFAULT, PointType>;
 
 extern std::vector<curvefitter::PoseData> pose_graph_key_pose;
