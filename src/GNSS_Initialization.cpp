@@ -284,6 +284,7 @@ bool GNSSLIInitializer::yaw_refinement(const std::vector<Eigen::Vector3d> &local
 }
 
 
+// 通过伪距，估计当前位置
   Eigen::Matrix<double, 7, 1> GNSSLIInitializer::Psr_pos(const std::vector<ObsPtr> &obs, 
         const std::vector<EphemBasePtr> &ephems, const std::vector<double> &iono_params)
     {
