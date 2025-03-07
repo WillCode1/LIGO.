@@ -110,7 +110,7 @@ class GNSSProcess
   // double para_yaw_enu_local[1];
   double para_rcv_dt[(WINDOW_SIZE+1)*4] = {0}; //
   double para_rcv_ddt[WINDOW_SIZE+1] = {0}; //
-  Eigen::Vector3d anc_ecef, gravity_init;
+  Eigen::Vector3d anc_ecef, gravity_init; // in ENU frame
   Eigen::Vector3d anc_local = Eigen::Vector3d::Zero();
   Eigen::Matrix3d R_ecef_enu;
   double yaw_enu_local = 0.0;

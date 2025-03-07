@@ -392,7 +392,8 @@ bool GNSSProcess::GNSSLIAlign()
         gnss_ephem_buf[frame_count].swap(empty_vec_e);
         return false;
       }
-      anc_local = pos_window[0] - rot_window[0] * Tex_imu_r; // [wind_size]; // ? 
+      // anc_local = pos_window[0] - rot_window[0] * Tex_imu_r; // [wind_size]; // ? 
+      anc_local = pos_window[0];
       yaw_enu_local = 0.0; // -2418165.665753, 5385967.410215, 2405315.115443; // 
       para_rcv_ddt[0] = 0.0; // 128.0;
       // rough_xyz = rough_xyzt.head<3>();
