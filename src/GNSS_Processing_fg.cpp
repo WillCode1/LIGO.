@@ -342,9 +342,9 @@ bool GNSSProcess::GNSSLIAlign()
 
     // 1. get a rough global location
     Eigen::Matrix<double, 7, 1> rough_xyzt;
-    // Eigen::Matrix<double, 3, 1> rough_xyz;
+    Eigen::Matrix<double, 3, 1> rough_xyz;
     rough_xyzt.setZero();
-    // rough_xyz.setZero();
+    rough_xyz.setZero();
     if (!gnss_li_initializer.coarse_localization(rough_xyzt))
     {
         std::cerr << "Fail to obtain a coarse location.\n";
@@ -396,23 +396,58 @@ bool GNSSProcess::GNSSLIAlign()
       anc_local = pos_window[0];
       yaw_enu_local = 0.0; // -2418165.665753, 5385967.410215, 2405315.115443; // 
       para_rcv_ddt[0] = 0.0; // 128.0;
-      // rough_xyz = rough_xyzt.head<3>();
-      // if (anc_local.norm() > 100)
-      // {
-      //   std::vector<Eigen::Vector3d> local_vs;
-      //   for (uint32_t i = 0; i < (WINDOW_SIZE+1); ++i)
-      //       local_vs.push_back(vel_window[i]); // values at gnss measurement
-      //   if (gnss_li_initializer.yaw_alignment(local_vs, rough_xyz, yaw_enu_local, para_rcv_ddt[0]))
-      //   {
-      //     printf("yaw_enu_local:%f\n",yaw_enu_local);
-      //   }
-      //   else
-      //   {
-      //     yaw_enu_local = 0.0;
-      //     para_rcv_ddt[0] = 0.0;
-      //     rough_xyz = rough_xyzt.head<3>();
-      //   }
-      // }
+#if 1
+      rough_xyz = rough_xyzt.head<3>();
+      // printf("anc_local:%f\n", anc_local.norm());
+      if (anc_local.norm() > 10)
+      {
+        std::vector<Eigen::Vector3d> local_vs;
+        for (uint32_t i = 0; i < (WINDOW_SIZE+1); ++i)
+            local_vs.push_back(vel_window[i]); // values at gnss measurement
+        if (gnss_li_initializer.yaw_alignment(local_vs, rough_xyz, yaw_enu_local, para_rcv_ddt[0]))
+        {
+          printf("yaw_enu_local: %ld, %f, %f\n", local_vs.size(), yaw_enu_local, RAD2DEG(yaw_enu_local));
+        }
+        else
+        {
+          for (uint32_t i = 0; i < (wind_size); ++i)
+          {
+            gnss_meas_buf[i] = gnss_meas_buf[i + 1];
+            gnss_ephem_buf[i] = gnss_ephem_buf[i + 1];
+            rot_window[i] = rot_window[i + 1];
+            pos_window[i] = pos_window[i + 1];
+            vel_window[i] = vel_window[i + 1];
+          }
+          frame_count = wind_size;
+          std::vector<ObsPtr> empty_vec_o;
+          std::vector<EphemBasePtr> empty_vec_e;
+          gnss_meas_buf[frame_count].swap(empty_vec_o);
+          gnss_ephem_buf[frame_count].swap(empty_vec_e);
+
+          yaw_enu_local = 0.0;
+          para_rcv_ddt[0] = 0.0;
+          rough_xyz = rough_xyzt.head<3>();
+          return false;
+        }
+      }
+      else
+      {
+        for (uint32_t i = 0; i < (wind_size); ++i)
+        {
+          gnss_meas_buf[i] = gnss_meas_buf[i + 1];
+          gnss_ephem_buf[i] = gnss_ephem_buf[i + 1];
+          rot_window[i] = rot_window[i + 1];
+          pos_window[i] = pos_window[i + 1];
+          vel_window[i] = vel_window[i + 1];
+        }
+        frame_count = wind_size;
+        std::vector<ObsPtr> empty_vec_o;
+        std::vector<EphemBasePtr> empty_vec_e;
+        gnss_meas_buf[frame_count].swap(empty_vec_o);
+        gnss_ephem_buf[frame_count].swap(empty_vec_e);
+        return false;
+      }
+#endif
       anc_ecef = rough_xyzt.head<3>(); // - anc_local; << -2418181.50, 5385962.29, 2405305.18;
       R_ecef_enu = ecef2rotation(anc_ecef); // * Eigen::AngleAxisd(yaw_enu_local, Eigen::Vector3d::UnitZ()).matrix(); // * yawAngle; // * pitchAngle * rollAngle; //<< 0.772234, 0.501306, -0.390316,
                       // 0.047633, 0.566933, 0.822386,
