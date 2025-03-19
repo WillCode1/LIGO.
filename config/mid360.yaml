@@ -9,7 +9,7 @@ preprocess:
     lidar_type: 1 
     scan_line: 6 
     timestamp_unit: 1        # the unit of time/t field in the PointCloud2 rostopic: 0-second, 1-milisecond, 2-microsecond, 3-nanosecond.
-    blind: 0.50              # near bline area
+    blind: 3              # near bline area
     det_range: 1000          # distance range
 
 mapping:

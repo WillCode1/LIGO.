@@ -396,7 +396,7 @@ bool GNSSProcess::GNSSLIAlign()
       anc_local = pos_window[0];
       yaw_enu_local = 0.0; // -2418165.665753, 5385967.410215, 2405315.115443; // 
       para_rcv_ddt[0] = 0.0; // 128.0;
-#if 1
+#if 0
       rough_xyz = rough_xyzt.head<3>();
       // printf("anc_local:%f\n", anc_local.norm());
       if (anc_local.norm() > 10)
@@ -452,9 +452,11 @@ bool GNSSProcess::GNSSLIAlign()
       R_ecef_enu = ecef2rotation(anc_ecef); // * Eigen::AngleAxisd(yaw_enu_local, Eigen::Vector3d::UnitZ()).matrix(); // * yawAngle; // * pitchAngle * rollAngle; //<< 0.772234, 0.501306, -0.390316,
                       // 0.047633, 0.566933, 0.822386,
                       // 0.633550, -0.653666, 0.413926; //
-      anc_ecef -= R_ecef_enu * anc_local; // anc_local too large: need initialize yaw
+      // anc_ecef -= R_ecef_enu * anc_local; // anc_local too large: need initialize yaw
       // R_ecef_enu = ecef2rotation(anc_ecef); // * Eigen::AngleAxisd(yaw_enu_local, Eigen::Vector3d::UnitZ()).matrix(); // * yawAngle; // * pitchAngle * rollAngle; //<< 0.772234, 0.501306, -0.390316,
       para_rcv_dt[4*wind_size] = rough_xyzt(3+dt_idx);
+      std::cout << R_ecef_enu << std::endl;
+      std::cout << std::fixed << std::setprecision(10) << anc_ecef << std::endl;
     }
   }
   else
