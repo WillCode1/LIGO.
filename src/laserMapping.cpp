@@ -1786,7 +1786,7 @@ int main(int argc, char** argv)
             }
 
 #ifdef PGO
-            LOG_INFO("location valid. feats_down = %lu, cost time = %.1fms.", feats_down_world->size(), timer.elapsedLast());
+            // LOG_INFO("location valid. feats_down = %lu, cost time = %.1fms.", feats_down_world->size(), timer.elapsedLast());
 #endif
             t5 = omp_get_wtime();
             /******* Publish points *******/
