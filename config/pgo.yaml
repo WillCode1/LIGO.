@@ -56,7 +56,7 @@ official:
     save_globalmap_en: true
     save_resolution: 0.2
     save_keyframe_en: true
-    save_keyframe_descriptor_en: false
+    save_keyframe_descriptor_en: true
     # map_path: "/home/will/data/test_mapping/mapping1"
 
     save_pgm: false
