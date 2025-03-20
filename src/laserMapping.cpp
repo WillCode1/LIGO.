@@ -51,6 +51,7 @@
 #include <opencv2/opencv.hpp>
 #include "chi-square.h"
 // #include <ros/console.h>
+// #define TEST
 
 
 #define PUBFRAME_PERIOD     (20)
@@ -460,7 +461,7 @@ int main(int argc, char** argv)
             sub_rtk_pvt_info = nh.subscribe(rtk_pvt_topic, 100, rtk_pvt_callback);
         }
     }
-    #ifdef process_ppp
+#ifdef process_ppp
     if (NMEA_ENABLE)
     {
         std::vector<Eigen::Vector4d> gt_holder;
@@ -535,7 +536,7 @@ int main(int argc, char** argv)
             nmea_meas_buf.push(nav_msgs::OdometryPtr(new nav_msgs::Odometry(gps_odom)));
         }
     }
-    #endif
+#endif
     if (NMEA_ENABLE)
     {
         // sub_nmea_meas = nh.subscribe(nmea_meas_topic, 10000, nmea_meas_callback);
@@ -1356,9 +1357,12 @@ int main(int argc, char** argv)
                         PointType &point_body_j  = feats_down_body->points[idx+j+1];
                         PointType &point_world_j = feats_down_world->points[idx+j+1];
                         pointBodyToWorld(&point_body_j, &point_world_j);
+#ifdef TEST
                     if (GNSS_ENABLE || NMEA_ENABLE)
                         lidarpoints.push_back(pimu_list[idx+j+1]); // (Eigen::Vector3d(point_body_j.x, point_body_j.y, point_body_j.z));
+#endif
                     }
+#ifdef TEST
                     if (GNSS_ENABLE || NMEA_ENABLE)
                     {
                         if (pose_graph_key_pose.empty()){
@@ -1369,6 +1373,7 @@ int main(int argc, char** argv)
                                 traj_manager->AddGraphPose(Eigen::Quaterniond(kf_output.x_.rot).normalized(), kf_output.x_.pos, lidarpoints, time_current, pose_graph_key_pose, pose_time_vector, LiDAR_points, points_num);
                         }
                     }
+#endif
                     idx += time_seq[k];
                 }
                 }
@@ -1838,6 +1843,7 @@ int main(int argc, char** argv)
     backend.save_trajectory();
     backend.save_globalmap();
 #endif
+#ifdef TEST
     //--------------------------save map-----------------------------------
     /* 1. make sure you have enough memories
     /* 2. noted that pcd save will influence the real-time performences **/
@@ -1876,6 +1882,7 @@ int main(int argc, char** argv)
         fout_rtk << setw(20) << p_gnss->pvt_time[i] - p_gnss->pvt_time[0] << " " << p_gnss->pvt_holder[i].transpose() << " " << p_gnss->diff_holder[i] << " " << p_gnss->float_holder[i] << endl; // "\n";
     }
     fout_rtk.close();
+#endif
     #ifdef process_ppp
     for (int i = 0; i < ppp_ecef.size(); i++)
     {
