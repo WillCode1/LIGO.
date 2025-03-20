@@ -40,19 +40,6 @@ public:
         FileOperation::createDirectoryOrRecreate(scd_path);
     }
 
-    void run(PointXYZIRPYT &this_pose6d, PointCloudType::Ptr &feats_undistort)
-    {
-        this_pose6d.intensity = keyframe_pose6d_optimized->size();
-        if (backend->is_keyframe(this_pose6d))
-        {
-            keyframe_pose6d_optimized->push_back(this_pose6d);
-            keyframe_scan->push_back(feats_undistort);
-
-            if (save_keyframe_en)
-                save_keyframe(feats_undistort, keyframe_scan->size());
-        }
-    }
-
     void run(PointXYZIRPYT &this_pose6d, PointCloudType::Ptr &feats_undistort, PointCloudType::Ptr &submap_fix)
     {
         this_pose6d.intensity = keyframe_pose6d_unoptimized->size();

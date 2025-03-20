@@ -36,10 +36,6 @@
 
 #include "parameters.h"
 
-#ifdef PGO
-FILE *location_log = nullptr;
-Backend backend;
-#endif
 
 typename curvefitter::TrajectoryManager<4>::Ptr traj_manager = std::make_shared<curvefitter::TrajectoryManager<4>>();
 bool is_first_frame = true;

@@ -307,6 +307,16 @@ void state2pose(PointXYZIRPYT &this_pose6d, const T &state)
     this_pose6d.yaw = eulerAngle(2);   // yaw
     this_pose6d.time = lidar_end_time;
 }
+
+template <typename T>
+void pose2state(const PointXYZIRPYT &this_pose6d, T &state)
+{
+    // lidar pose -> imu pose
+    V3D lidar_pos = V3D(this_pose6d.x, this_pose6d.y, this_pose6d.z);
+    V3D eulerAngle = V3D(this_pose6d.roll, this_pose6d.pitch, this_pose6d.yaw);
+    M3D lidar_rot = EigenMath::RPY2RotationMatrix(eulerAngle);
+    poseTransformFrame2(lidar_rot, lidar_pos, Lidar_R_wrt_IMU, Lidar_T_wrt_IMU, state.rot, state.pos);
+}
 #endif
 
 int main(int argc, char** argv)
@@ -1803,7 +1813,13 @@ int main(int argc, char** argv)
             }
             PointXYZIRPYT this_pose6d;
             state2pose(this_pose6d, kf_output.x_);
-            backend.run(this_pose6d, feats_undistort_real);
+            PointCloudXYZI::Ptr submap_fix(new PointCloudXYZI());
+            pgo_handle(this_pose6d, feats_undistort_real, submap_fix);
+            if (submap_fix->size() > 0)
+            {
+                pose2state(this_pose6d, kf_output.x_);
+                // ikdtree.reconstruct(submap_fix->points);
+            }
 #endif
             /*** Debug variables Logging ***/
             if (runtime_pos_log)

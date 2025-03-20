@@ -118,7 +118,9 @@ add_executable(ligo_mapping src/laserMapping.cpp
                 src/li_initialization.cpp src/parameters.cpp src/preprocess.cpp src/Estimator.cpp 
                 src/IMU_Processing.cpp src/GNSS_Processing_fg.cpp src/GNSS_Initialization.cpp src/GNSS_Assignment.cpp
                 src/NMEA_Processing_fg.cpp src/NMEA_Assignment.cpp
-                include/backend_optimization/global_localization/scancontext/Scancontext.cpp)
+                include/backend_optimization/global_localization/scancontext/Scancontext.cpp
+                include/backend_optimization/global_localization/InitCoordinate.cpp
+                include/backend_optimization/interface_ros1.cpp)
 target_link_libraries(ligo_mapping ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${CERES_LIBRARIES} ${OpenCV_LIBS} ${PYTHON_LIBRARIES} ceres gtsam stdc++fs)
 # target_link_libraries(ligo_mapping dw)
 target_link_libraries(ligo_mapping ${Sophus_LIBRARIES} fmt)

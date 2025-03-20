@@ -65,6 +65,7 @@
 
 #define PGO
 #ifdef PGO
+#include "backend_optimization/interface_ros1.h"
 #include "backend_optimization/pgo/Backend.hpp"
 extern Backend backend;
 #endif
