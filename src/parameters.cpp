@@ -286,22 +286,6 @@ void readParameters(ros::NodeHandle &nh)
         nh.param<int>("gnss/window_size",p_nmea->wind_size, 2);
         p_nmea->p_assign->initNoises();
     }
-#ifdef PGO
-    nh.param<float>("pgo/keyframe_add_dist_threshold", backend.backend->keyframe_add_dist_threshold, 1.0f);
-    nh.param<float>("pgo/keyframe_add_angle_threshold", backend.backend->keyframe_add_angle_threshold, 0.2f);
-    nh.param<float>("pgo/save_resolution", backend.save_resolution, 0.1f);
-    nh.param<bool>("pgo/save_keyframe_en", backend.save_keyframe_en, false);
-    nh.param<string>("pgo/map_path", backend.map_path, std::string(""));
-    if (backend.map_path.compare("") != 0)
-    {
-        backend.globalmap_path = backend.map_path + "/globalmap.pcd";
-        backend.trajectory_path = backend.map_path + "/trajectory.pcd";
-        backend.keyframe_path = backend.map_path + "/keyframe/";
-        backend.scd_path = backend.map_path + "/scancontext/";
-    }
-    else
-        backend.map_path = PCD_FILE_DIR("");
-#endif
 }
 
 Eigen::Matrix<double, 3, 1> SO3ToEuler(const SO3 &rot) 

@@ -327,7 +327,7 @@ int main(int argc, char** argv)
     spinner.start();
     readParameters(nh);
 #ifdef PGO
-    backend.init_system_mode();
+    init_pgo_system(nh);
 #endif
     cout<<"lidar_type: "<<lidar_type<<endl;
     ivox_ = std::make_shared<IVoxType>(ivox_options_);
