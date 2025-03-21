@@ -2,7 +2,7 @@
 
 	<arg name="rviz" default="true" />
 
-	<rosparam command="load" file="$(find fast_lio)/config/pgo.yaml" />
+	<rosparam command="load" file="$(find ligo)/config/pgo.yaml" />
 
 	<node pkg="ligo" type="ligo_mapping" name="laserMapping" output="screen">
 	<rosparam command="load" file="$(find ligo)/config/avia_deg.yaml" />

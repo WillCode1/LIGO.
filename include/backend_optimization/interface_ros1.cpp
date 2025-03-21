@@ -456,11 +456,11 @@ void init_pgo_system(ros::NodeHandle &nh)
 
     /*** ROS subscribe initialization ***/
 #ifdef UrbanLoco
-    ros::Subscriber sub_gnss = nh.subscribe(gnss_topic, 200000, UrbanLoco_cbk);
+    sub_gnss = nh.subscribe(gnss_topic, 200000, UrbanLoco_cbk);
 #elif defined(liosam)
-    ros::Subscriber sub_gnss = nh.subscribe(gnss_topic, 200000, gnss_cbk);
+    sub_gnss = nh.subscribe(gnss_topic, 200000, gnss_cbk);
 #else
-    ros::Subscriber sub_gnss = nh.subscribe(gnss_topic, 200000, ublox_cbk);
+    sub_gnss = nh.subscribe(gnss_topic, 200000, ublox_cbk);
 #endif
     pubLaserCloudFull = nh.advertise<sensor_msgs::PointCloud2>("/lidar_scan", 100000);
     pubOdomAftMapped = nh.advertise<nav_msgs::Odometry>("/odom_fix", 100000);

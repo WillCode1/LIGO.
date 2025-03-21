@@ -2,7 +2,7 @@
 
 	<arg name="rviz" default="true" />
 
-	<rosparam command="load" file="$(find fast_lio)/config/pgo.yaml" />
+	<rosparam command="load" file="$(find ligo)/config/pgo.yaml" />
 
 	<node pkg="ligo" type="ligo_mapping" name="laserMapping" output="screen">
 	<rosparam command="load" file="$(find ligo)/config/avia.yaml" />
@@ -17,7 +17,8 @@
 	<param name="runtime_pos_log_enable" type="bool" value="0" />
 	</node>
 	<group if="$(arg rviz)">
-	<node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find ligo)/rviz_cfg/loam_livox.rviz" />
+	<!-- <node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find ligo)/rviz_cfg/loam_livox.rviz" /> -->
+	<node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find ligo)/rviz_cfg/pgo.rviz" />
 	</group>
 
 	launch-prefix="valgrind" 
