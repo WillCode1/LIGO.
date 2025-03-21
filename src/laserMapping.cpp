@@ -1818,8 +1818,8 @@ int main(int argc, char** argv)
             if (submap_fix->size() > 0)
             {
                 pose2state(this_pose6d, kf_output.x_);
-                // ivox_.reset(new IVoxType(ivox_options_));
-                // ivox_last_.reset(new IVoxType(ivox_options_));
+                ivox_.reset(new IVoxType(ivox_options_));
+                ivox_last_.reset(new IVoxType(ivox_options_));
                 ivox_last_->AddPoints(submap_fix->points);
                 ivox_->grids_map_ = ivox_last_->grids_map_;
             }
