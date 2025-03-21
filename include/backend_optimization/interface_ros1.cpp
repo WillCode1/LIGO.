@@ -92,7 +92,7 @@ void ublox_cbk(const gnss_comm::GnssPVTSolnMsg::ConstPtr &msg)
         return;
 
     V3D gnss_position = backend.gnss->gnss_global2local(V3D(msg->latitude, msg->longitude, msg->altitude));
-    double ts = gnss_comm::time2sec(gnss_comm::gst2time(msg->time.week, msg->time.tow));
+    double ts = gnss_comm::time2sec(gnss_comm::gpst2time(msg->time.week, msg->time.tow));
     ts -= 18;
 
 #if 0

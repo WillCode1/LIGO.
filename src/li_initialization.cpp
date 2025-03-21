@@ -87,7 +87,7 @@ void gnss_iono_params_callback(const StampedFloat64ArrayConstPtr &iono_msg)
 
 void rtk_pvt_callback(const GnssPVTSolnMsgConstPtr &groundt_pvt)
 {
-    double ts = time2sec(gst2time(groundt_pvt->time.week, groundt_pvt->time.tow));
+    double ts = time2sec(gpst2time(groundt_pvt->time.week, groundt_pvt->time.tow));
     p_gnss->inputpvt(ts, groundt_pvt->latitude, groundt_pvt->longitude, groundt_pvt->altitude, groundt_pvt->carr_soln, groundt_pvt->diff_soln);
 }
 
