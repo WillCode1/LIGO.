@@ -1,5 +1,6 @@
 common:
-    gnss_topic:  "/gps/fix"
+    # gnss_topic:  "/gps/fix"
+    gnss_topic:  "/ublox_driver/receiver_pvt"
     map_frame:  "map"
     lidar_frame:  "lidar"
 
@@ -15,7 +16,8 @@ mapping:
     # for add GNSS factor
     numsv: 20
     rtk_age: 30
-    gpsCovThreshold: [0.05, 0.05, 0.1, 0.05, 0.05, 0.05]
+    # gpsCovThreshold: [0.05, 0.05, 0.1, 0.05, 0.05, 0.05]
+    gpsCovThreshold: [0.02, 0.02, 1.5, 0.05, 0.05, 0.05]    # ublox
     pose_cov_threshold: 0.
     gnssValidInterval: 0.1
     useGpsElevation: true

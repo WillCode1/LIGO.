@@ -14,6 +14,8 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <gnss_comm/GnssPVTSolnMsg.h>
+#include <gnss_comm/gnss_utility.hpp>
 #include "pgo/Backend.hpp"
 #include "interface_ros1.h"
 // #define UrbanLoco
@@ -37,6 +39,7 @@ static ros::Subscriber sub_gnss;
 static ros::Publisher pubGlobalmap;
 static std::thread visualizeMapThread;
 static ros::Subscriber sub_initpose;
+ros::Publisher pubGpsIns;
 
 static std::string map_frame;
 static std::string lidar_frame;
@@ -64,6 +67,50 @@ void UrbanLoco_cbk(const nav_msgs::OdometryConstPtr &msg)
                                         V3D(msg->pose.covariance[21], msg->pose.covariance[28], msg->pose.covariance[35])));
     backend.relocalization->gnss_pose = GnssPose(msg->header.stamp.toSec(), gnss_position,
                                                  QD(msg->pose.pose.orientation.w, msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z));
+}
+
+void ublox_cbk(const gnss_comm::GnssPVTSolnMsg::ConstPtr &msg)
+{
+    if (msg->fix_type != 3)
+        return;
+
+    if (msg->valid_fix == false)
+        return;
+
+    if (msg->diff_soln == false)
+        return;
+
+    if (msg->carr_soln != 2)
+        return;
+
+    if (msg->num_sv < backend.gnss->numsv)
+        return;
+
+    if (msg->h_acc > backend.gnss->gpsCovThreshold[0] ||
+        msg->v_acc > backend.gnss->gpsCovThreshold[1] ||
+        msg->p_dop > backend.gnss->gpsCovThreshold[2])
+        return;
+
+    V3D gnss_position = backend.gnss->gnss_global2local(V3D(msg->latitude, msg->longitude, msg->altitude));
+    double ts = gnss_comm::time2sec(gnss_comm::gst2time(msg->time.week, msg->time.tow));
+    ts -= 18;
+
+#if 0
+    geometry_msgs::Twist gps_pose;
+    gps_pose.linear.x = gnss_position.x();
+    gps_pose.linear.y = gnss_position.y();
+    gps_pose.linear.z = gnss_position.z();
+    gps_pose.angular.x = 0;
+    gps_pose.angular.y = 0;
+    gps_pose.angular.z = 0;
+    pubGpsIns.publish(gps_pose);
+#endif
+
+    QD rot = QD::Identity();
+    Eigen::VectorXd pose_std(6);
+    pose_std << msg->h_acc, msg->h_acc, msg->v_acc, 0, 0, 0;
+    backend.gnss->gnss_handler(GnssPose(ts, gnss_position, rot, pose_std));
+    backend.relocalization->gnss_pose = GnssPose(ts, gnss_position, rot);
 }
 
 void publish_cloud(const ros::Publisher &pubCloud, PointCloudType::Ptr cloud, const double &lidar_end_time, const std::string &frame_id)
@@ -409,9 +456,11 @@ void init_pgo_system(ros::NodeHandle &nh)
 
     /*** ROS subscribe initialization ***/
 #ifdef UrbanLoco
-    sub_gnss = nh.subscribe(gnss_topic, 200000, UrbanLoco_cbk);
+    ros::Subscriber sub_gnss = nh.subscribe(gnss_topic, 200000, UrbanLoco_cbk);
+#elif defined(liosam)
+    ros::Subscriber sub_gnss = nh.subscribe(gnss_topic, 200000, gnss_cbk);
 #else
-    sub_gnss = nh.subscribe(gnss_topic, 200000, gnss_cbk);
+    ros::Subscriber sub_gnss = nh.subscribe(gnss_topic, 200000, ublox_cbk);
 #endif
     pubLaserCloudFull = nh.advertise<sensor_msgs::PointCloud2>("/lidar_scan", 100000);
     pubOdomAftMapped = nh.advertise<nav_msgs::Odometry>("/odom_fix", 100000);
@@ -422,4 +471,5 @@ void init_pgo_system(ros::NodeHandle &nh)
     pubGlobalmap = nh.advertise<sensor_msgs::PointCloud2>("/map_global", 1);
     visualizeMapThread = std::thread(&visualize_globalmap_thread, pubGlobalmap);
     sub_initpose = nh.subscribe("/initialpose", 1, initialPoseCallback);
+    pubGpsIns = nh.advertise<geometry_msgs::Twist>("/gps_ins_pose", 100000);
 }
