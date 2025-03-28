@@ -14,10 +14,13 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <gnss_comm/GnssPVTSolnMsg.h>
-#include <gnss_comm/gnss_utility.hpp>
 #include "pgo/Backend.hpp"
 #include "interface_ros1.h"
+
+#include <gnss_comm/GnssPVTSolnMsg.h>
+#include <gnss_comm/gnss_utility.hpp>
+#include <chcnav/hcinspvatzcb.h>
+
 // #define UrbanLoco
 // #define liosam
 
@@ -111,6 +114,26 @@ void ublox_cbk(const gnss_comm::GnssPVTSolnMsg::ConstPtr &msg)
     pose_std << msg->h_acc, msg->h_acc, msg->v_acc, 0, 0, 0;
     backend.gnss->gnss_handler(GnssPose(ts, gnss_position, rot, pose_std));
     backend.relocalization->gnss_pose = GnssPose(ts, gnss_position, rot);
+}
+
+void chcnav_cbk(const chcnav::hcinspvatzcb::ConstPtr &msg)
+{
+    V3D gnss_position = backend.gnss->gnss_global2local(V3D(msg->latitude, msg->longitude, msg->altitude));
+
+    if (msg->stat[0] != 2 || msg->stat[1] != 4)
+        return;
+
+    if (msg->ns <= backend.gnss->numsv || msg->ns2 <= backend.gnss->numsv)
+        return;
+
+    if (msg->age > backend.gnss->rtk_age)
+        return;
+
+    QD rot = EigenMath::RPY2Quaternion(V3D(msg->roll, msg->pitch, msg->yaw));
+    Eigen::VectorXd pose_std(6);
+    pose_std << msg->position_stdev[0], msg->position_stdev[1], msg->position_stdev[2], msg->euler_stdev[0], msg->euler_stdev[1], msg->euler_stdev[2];
+    backend.gnss->gnss_handler(GnssPose(msg->header.stamp.toSec(), gnss_position, rot, pose_std));
+    backend.relocalization->gnss_pose = GnssPose(msg->header.stamp.toSec(), gnss_position, rot);
 }
 
 void publish_cloud(const ros::Publisher &pubCloud, PointCloudType::Ptr cloud, const double &lidar_end_time, const std::string &frame_id)
@@ -460,7 +483,8 @@ void init_pgo_system(ros::NodeHandle &nh)
 #elif defined(liosam)
     sub_gnss = nh.subscribe(gnss_topic, 200000, gnss_cbk);
 #else
-    sub_gnss = nh.subscribe(gnss_topic, 200000, ublox_cbk);
+    // sub_gnss = nh.subscribe(gnss_topic, 200000, ublox_cbk);
+    sub_gnss = nh.subscribe(gnss_topic, 200000, chcnav_cbk);
 #endif
     pubLaserCloudFull = nh.advertise<sensor_msgs::PointCloud2>("/lidar_scan", 100000);
     pubOdomAftMapped = nh.advertise<nav_msgs::Odometry>("/odom_fix", 100000);
