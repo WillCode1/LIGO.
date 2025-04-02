@@ -11,7 +11,7 @@ mapping:
     keyframe_add_angle_threshold: 0.2
     recontruct_kdtree: true
     ikdtree_reconstruct_keyframe_num: 30    # the smaller, the worse
-    ikdtree_reconstruct_downsamp_size: 0.1
+    ikdtree_reconstruct_downsamp_size: 0.0
 
     # for add GNSS factor
     numsv: 40

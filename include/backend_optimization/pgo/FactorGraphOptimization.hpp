@@ -260,14 +260,13 @@ private:
     {
         if (recontruct_kdtree)
         {
-            PointCloudType::Ptr submap_keyframes(new PointCloudType());
-
             int key_poses_num = keyframe_pose6d_optimized->size();
             for (int i = std::max(0, key_poses_num - ikdtree_reconstruct_keyframe_num); i < key_poses_num; ++i)
             {
-                *submap_keyframes += *pointcloudKeyframeToWorld((*keyframe_scan)[i], keyframe_pose6d_optimized->points[i]);
+                *submap_fix += *pointcloudKeyframeToWorld((*keyframe_scan)[i], keyframe_pose6d_optimized->points[i]);
             }
-            octreeDownsampling(submap_keyframes, submap_fix, ikdtree_reconstruct_downsamp_size);
+            if (ikdtree_reconstruct_downsamp_size != 0)
+                octreeDownsampling(submap_fix, submap_fix, ikdtree_reconstruct_downsamp_size);
         }
     }
 
