@@ -16,8 +16,9 @@ mapping:
     # for add GNSS factor
     numsv: 40
     rtk_age: 30
-    # gpsCovThreshold: [0.017, 0.017, 1.5, 0.05, 0.05, 0.05]    # ublox
-    gpsCovThreshold: [0.05, 0.05, 0.1, 0.05, 0.05, 0.05]
+    # gpsCovThreshold: [0.05, 0.05, 0.1, 0.05, 0.05, 0.05]
+    # gpsCovThreshold: [0.017, 0.017, 1.5, 0.05, 0.05, 0.05]      # ublox
+    gpsCovThreshold: [0.02, 0.02, 0.05, 0.001, 0.001, 0.002]    # chcnav
     pose_cov_threshold: 0.
     gnssValidInterval: 0.1
     useGpsElevation: true
