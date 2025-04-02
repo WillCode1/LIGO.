@@ -165,7 +165,7 @@ private:
         {
             auto gnss_weight = 1.0;
             gtsam::Vector Vector3(3);
-            Vector3 << max(thisGPS.covariance(0), gnss_weight), max(thisGPS.covariance(1), gnss_weight), max(thisGPS.covariance(2), 0.2);
+            Vector3 << max(thisGPS.covariance(0), gnss_weight), max(thisGPS.covariance(1), gnss_weight), max(thisGPS.covariance(2), 0.1);
             gtsam::noiseModel::Diagonal::shared_ptr gnss_noise = gtsam::noiseModel::Diagonal::Variances(Vector3);
             gtsam::GPSFactor gps_factor(keyframe_pose6d_optimized->size(), gtsam::Point3(thisGPS.lidar_pos_fix(0), thisGPS.lidar_pos_fix(1), thisGPS.lidar_pos_fix(2)), gnss_noise);
             gtsam_graph.add(gps_factor);

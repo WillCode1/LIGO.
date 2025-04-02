@@ -6,18 +6,18 @@ common:
 
 mapping:
     # for backend
-    # keyframe_add_dist_threshold: 1
-    keyframe_add_dist_threshold: 2.5
+    keyframe_add_dist_threshold: 1
+    # keyframe_add_dist_threshold: 2.5
     keyframe_add_angle_threshold: 0.2
     recontruct_kdtree: true
-    ikdtree_reconstruct_keyframe_num: 10    # the smaller, the worse
+    ikdtree_reconstruct_keyframe_num: 30    # the smaller, the worse
     ikdtree_reconstruct_downsamp_size: 0.1
 
     # for add GNSS factor
-    numsv: 20
+    numsv: 40
     rtk_age: 30
     # gpsCovThreshold: [0.017, 0.017, 1.5, 0.05, 0.05, 0.05]    # ublox
-    gpsCovThreshold: [0.05, 0.05, 0.1, 0.05, 0.05, 0.05]
+    gpsCovThreshold: [0.05, 0.05, 0.1, 0.05, 0.05, 0.06]
     pose_cov_threshold: 0.
     gnssValidInterval: 0.1
     useGpsElevation: true

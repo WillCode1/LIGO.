@@ -129,7 +129,18 @@ void chcnav_cbk(const chcnav::hcinspvatzcb::ConstPtr &msg)
     if (msg->age > backend.gnss->rtk_age)
         return;
 
-    QD rot = EigenMath::RPY2Quaternion(V3D(msg->roll, msg->pitch, msg->yaw));
+#if 0
+    geometry_msgs::Twist gps_pose;
+    gps_pose.linear.x = gnss_position.x();
+    gps_pose.linear.y = gnss_position.y();
+    gps_pose.linear.z = gnss_position.z();
+    gps_pose.angular.x = 0;
+    gps_pose.angular.y = 0;
+    gps_pose.angular.z = 0;
+    pubGpsIns.publish(gps_pose);
+#endif
+
+    QD rot = EigenMath::RPY2Quaternion(V3D(DEG2RAD(msg->roll), DEG2RAD(msg->pitch), DEG2RAD(msg->yaw)));
     Eigen::VectorXd pose_std(6);
     pose_std << msg->position_stdev[0], msg->position_stdev[1], msg->position_stdev[2], msg->euler_stdev[0], msg->euler_stdev[1], msg->euler_stdev[2];
     backend.gnss->gnss_handler(GnssPose(msg->header.stamp.toSec(), gnss_position, rot, pose_std));
