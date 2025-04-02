@@ -1,6 +1,6 @@
 common:
-    # gnss_topic:  "/gps/fix"
-    gnss_topic:  "/ublox_driver/receiver_pvt"
+    # gnss_topic:  "/ublox_driver/receiver_pvt"
+    gnss_topic:  "/chcnav/devpvt"
     map_frame:  "map"
     lidar_frame:  "lidar"
 
@@ -16,8 +16,8 @@ mapping:
     # for add GNSS factor
     numsv: 20
     rtk_age: 30
-    # gpsCovThreshold: [0.05, 0.05, 0.1, 0.05, 0.05, 0.05]
-    gpsCovThreshold: [0.017, 0.017, 1.5, 0.05, 0.05, 0.05]    # ublox
+    # gpsCovThreshold: [0.017, 0.017, 1.5, 0.05, 0.05, 0.05]    # ublox
+    gpsCovThreshold: [0.05, 0.05, 0.1, 0.05, 0.05, 0.05]
     pose_cov_threshold: 0.
     gnssValidInterval: 0.1
     useGpsElevation: true
@@ -36,10 +36,10 @@ mapping:
     scancontext_loop_vaild_period: [0, 1]
 
     # lidar -> gnss
-    extrinsic_gnss_T: [ 0, 0, 0 ]
-    extrinsic_gnss_R: [ 1, 0, 0, 
-                        0, 1, 0, 
-                        0, 0, 1 ]
+    extrinsic_gnss_T: [ 0.14, -0.02, 0.233 ]
+    extrinsic_gnss_R: [ 0, -1, 0, 
+                        -1, 0, 0, 
+                        0, 0, -1 ]
 
 scan_context:
     lidar_height: 2
