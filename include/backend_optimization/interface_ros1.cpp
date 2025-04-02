@@ -147,7 +147,7 @@ void chcnav_cbk(const chcnav::hcinspvatzcb::ConstPtr &msg)
 #endif
 
     Eigen::VectorXd pose_std(6);
-    pose_std << msg->position_stdev[0], msg->position_stdev[1], msg->position_stdev[2], msg->euler_stdev[0], msg->euler_stdev[1], msg->euler_stdev[2];
+    pose_std << msg->position_stdev[0], msg->position_stdev[1], msg->position_stdev[2], DEG2RAD(msg->euler_stdev[0]), DEG2RAD(msg->euler_stdev[1]), DEG2RAD(msg->euler_stdev[2]);
     backend.gnss->gnss_handler(GnssPose(msg->header.stamp.toSec(), gnss_position, rot, pose_std));
     backend.relocalization->gnss_pose = GnssPose(msg->header.stamp.toSec(), gnss_position, rot);
 }
