@@ -99,13 +99,13 @@ void ublox_cbk(const gnss_comm::GnssPVTSolnMsg::ConstPtr &msg)
     ts -= 18;
 
 #if 0
-    geometry_msgs::Twist gps_pose;
-    gps_pose.linear.x = gnss_position.x();
-    gps_pose.linear.y = gnss_position.y();
-    gps_pose.linear.z = gnss_position.z();
-    gps_pose.angular.x = 0;
-    gps_pose.angular.y = 0;
-    gps_pose.angular.z = 0;
+    nav_msgs::Odometry gps_pose;
+    gps_pose.header.frame_id = map_frame;
+    gps_pose.child_frame_id = "gps_frame";
+    gps_pose.header.stamp = msg->header.stamp;
+    gps_pose.pose.pose.position.x = gnss_position.x();
+    gps_pose.pose.pose.position.y = gnss_position.y();
+    gps_pose.pose.pose.position.z = gnss_position.z();
     pubGpsIns.publish(gps_pose);
 #endif
 
@@ -129,18 +129,23 @@ void chcnav_cbk(const chcnav::hcinspvatzcb::ConstPtr &msg)
     if (msg->age > backend.gnss->rtk_age)
         return;
 
+    QD rot = EigenMath::RPY2Quaternion(V3D(DEG2RAD(msg->roll), DEG2RAD(msg->pitch), DEG2RAD(msg->yaw)));
+
 #if 0
-    geometry_msgs::Twist gps_pose;
-    gps_pose.linear.x = gnss_position.x();
-    gps_pose.linear.y = gnss_position.y();
-    gps_pose.linear.z = gnss_position.z();
-    gps_pose.angular.x = 0;
-    gps_pose.angular.y = 0;
-    gps_pose.angular.z = 0;
+    nav_msgs::Odometry gps_pose;
+    gps_pose.header.frame_id = map_frame;
+    gps_pose.child_frame_id = "gps_frame";
+    gps_pose.header.stamp = msg->header.stamp;
+    gps_pose.pose.pose.position.x = gnss_position.x();
+    gps_pose.pose.pose.position.y = gnss_position.y();
+    gps_pose.pose.pose.position.z = gnss_position.z();
+    gps_pose.pose.pose.orientation.x = rot.x();
+    gps_pose.pose.pose.orientation.y = rot.y();
+    gps_pose.pose.pose.orientation.z = rot.z();
+    gps_pose.pose.pose.orientation.w = rot.w();
     pubGpsIns.publish(gps_pose);
 #endif
 
-    QD rot = EigenMath::RPY2Quaternion(V3D(DEG2RAD(msg->roll), DEG2RAD(msg->pitch), DEG2RAD(msg->yaw)));
     Eigen::VectorXd pose_std(6);
     pose_std << msg->position_stdev[0], msg->position_stdev[1], msg->position_stdev[2], msg->euler_stdev[0], msg->euler_stdev[1], msg->euler_stdev[2];
     backend.gnss->gnss_handler(GnssPose(msg->header.stamp.toSec(), gnss_position, rot, pose_std));
@@ -506,5 +511,5 @@ void init_pgo_system(ros::NodeHandle &nh)
     pubGlobalmap = nh.advertise<sensor_msgs::PointCloud2>("/map_global", 1);
     visualizeMapThread = std::thread(&visualize_globalmap_thread, pubGlobalmap);
     sub_initpose = nh.subscribe("/initialpose", 1, initialPoseCallback);
-    pubGpsIns = nh.advertise<geometry_msgs::Twist>("/gps_ins_pose", 100000);
+    pubGpsIns = nh.advertise<nav_msgs::Odometry>("/gps_ins_pose", 100000);
 }
