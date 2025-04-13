@@ -163,9 +163,8 @@ private:
         GnssPose thisGPS;
         if (gnss->get_gnss_factor(thisGPS, this_pose6d.time, this_pose6d.z))
         {
-            auto gnss_weight = 1.0;
             gtsam::Vector Vector3(3);
-            Vector3 << max(thisGPS.covariance(0), gnss_weight), max(thisGPS.covariance(1), gnss_weight), max(thisGPS.covariance(2), 0.1);
+            Vector3 << max(thisGPS.covariance(0), gnss_weight[0]), max(thisGPS.covariance(1), gnss_weight[1]), max(thisGPS.covariance(2), gnss_weight[2]);
             gtsam::noiseModel::Diagonal::shared_ptr gnss_noise = gtsam::noiseModel::Diagonal::Variances(Vector3);
             gtsam::GPSFactor gps_factor(keyframe_pose6d_optimized->size(), gtsam::Point3(thisGPS.lidar_pos_fix(0), thisGPS.lidar_pos_fix(1), thisGPS.lidar_pos_fix(2)), gnss_noise);
             gtsam_graph.add(gps_factor);
@@ -307,6 +306,7 @@ public:
 
     /* loop clousre */
     float pose_cov_threshold = 25;
+    std::vector<double> gnss_weight;
     shared_ptr<GnssProcessor> gnss;
     bool loop_is_closed = false;
 
