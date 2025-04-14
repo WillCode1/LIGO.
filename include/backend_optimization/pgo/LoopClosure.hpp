@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <pcl/search/kdtree.h>
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/registration/icp.h>
 #include <pcl/registration/gicp.h>
 #include "../Header.h"
 #include "../global_localization/scancontext/Scancontext.h"
@@ -65,8 +66,10 @@ public:
         }
 
         // GICP match
-        pcl::GeneralizedIterativeClosestPoint<PointType, PointType> gicp;
+        // pcl::GeneralizedIterativeClosestPoint<PointType, PointType> gicp;
+        pcl::IterativeClosestPoint<PointType, PointType> gicp;
         gicp.setMaxCorrespondenceDistance(loop_closure_search_radius * 2);
+        // gicp.setMaxCorrespondenceDistance(loop_closure_search_radius * 0.5);
         // gicp.setMaxCorrespondenceDistance(5);
         gicp.setMaximumIterations(100);
         gicp.setTransformationEpsilon(1e-6);
@@ -84,8 +87,8 @@ public:
         float loop_closure_fitness_score_thld_tmp;
         if (last_loop_dartion_time == -1)
             loop_closure_fitness_score_thld_tmp = (loop_closure_fitness_score_thld - 0.1) / 2 + 0.1;
-        else if ((dartion_time - last_loop_dartion_time) < (loop_closure_fitness_score_thld - 0.1) * 100)
-            loop_closure_fitness_score_thld_tmp = (dartion_time - last_loop_dartion_time) * 0.01 + 0.1;
+        else if ((dartion_time - last_loop_dartion_time) < (loop_closure_fitness_score_thld - 0.1) * 50)
+            loop_closure_fitness_score_thld_tmp = (dartion_time - last_loop_dartion_time) * 0.02 + 0.1;
         else
             loop_closure_fitness_score_thld_tmp = loop_closure_fitness_score_thld;
 
