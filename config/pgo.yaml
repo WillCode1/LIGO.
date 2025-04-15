@@ -18,9 +18,10 @@ mapping:
     rtk_age: 30
     # gpsCovThreshold: [0.05, 0.05, 0.1, 0.05, 0.05, 0.05]
     # gpsCovThreshold: [0.017, 0.017, 1.5, 0.05, 0.05, 0.05]      # ublox
-    gpsCovThreshold: [0.02, 0.02, 0.05, 0.001, 0.001, 0.002]    # chcnav
+    # gpsCovThreshold: [0.02, 0.02, 0.07, 0.001, 0.001, 0.002]    # chcnav
+    gpsCovThreshold: [0.025, 0.025, 0.1, 0.001, 0.001, 0.002]    # chcnav
     pose_cov_threshold: 0.
-    gnss_weight: [1, 1, 0.1]
+    gnss_weight: [30, 30, 0.1]
     gnssValidInterval: 0.1
     useGpsElevation: true
 
@@ -38,7 +39,7 @@ mapping:
     scancontext_loop_vaild_period: [0, 1]
 
     # lidar -> gnss
-    extrinsic_gnss_T: [ 0.14, -0.02, 0.233 ]
+    extrinsic_gnss_T: [ 0.141, -0.00, 0.233 ]
     extrinsic_gnss_R: [ 0, -1, 0, 
                         -1, 0, 0, 
                         0, 0, -1 ]
