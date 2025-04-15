@@ -69,11 +69,9 @@ public:
         // pcl::GeneralizedIterativeClosestPoint<PointType, PointType> gicp;
         pcl::IterativeClosestPoint<PointType, PointType> gicp;
         gicp.setMaxCorrespondenceDistance(loop_closure_search_radius * 2);
-        // gicp.setMaxCorrespondenceDistance(loop_closure_search_radius * 0.5);
-        // gicp.setMaxCorrespondenceDistance(5);
-        gicp.setMaximumIterations(100);
-        gicp.setTransformationEpsilon(1e-6);
-        gicp.setEuclideanFitnessEpsilon(1e-6);
+        gicp.setMaximumIterations(1000);
+        gicp.setTransformationEpsilon(1e-8);
+        gicp.setEuclideanFitnessEpsilon(1e-8);
         gicp.setRANSACIterations(0);
 
         gicp.setInputSource(cur_keyframe_cloud);
@@ -84,21 +82,11 @@ public:
         else
             gicp.align(*unused_result);
 
-        float loop_closure_fitness_score_thld_tmp;
-        if (last_loop_dartion_time == -1)
-            loop_closure_fitness_score_thld_tmp = (loop_closure_fitness_score_thld - 0.1) / 2 + 0.1;
-        else if ((dartion_time - last_loop_dartion_time) < (loop_closure_fitness_score_thld - 0.1) * 50)
-            loop_closure_fitness_score_thld_tmp = (dartion_time - last_loop_dartion_time) * 0.02 + 0.1;
-        else
-            loop_closure_fitness_score_thld_tmp = loop_closure_fitness_score_thld;
-
-        if (gicp.hasConverged() == false || gicp.getFitnessScore() > loop_closure_fitness_score_thld_tmp)
+        if (gicp.hasConverged() == false || gicp.getFitnessScore() > loop_closure_fitness_score_thld)
         {
-            LOG_WARN("dartion_time = %.2f.loop closure failed by %s! %d, %.3f, %.3f", dartion_time, type.c_str(), gicp.hasConverged(), gicp.getFitnessScore(), loop_closure_fitness_score_thld_tmp);
+            LOG_WARN("dartion_time = %.2f.loop closure failed by %s! %d, %.3f, %.3f", dartion_time, type.c_str(), gicp.hasConverged(), gicp.getFitnessScore(), loop_closure_fitness_score_thld);
             return;
         }
-
-        last_loop_dartion_time = dartion_time;
 
         // publish corrected cloud
         {
@@ -263,7 +251,6 @@ public:
     std::shared_ptr<ScanContext::SCManager> sc_manager; // scan context
 
     // for visualize
-    double last_loop_dartion_time = -1;
     double dartion_time;
     PointCloudType::Ptr curKeyframeCloud;
     PointCloudType::Ptr prevKeyframeCloud;
