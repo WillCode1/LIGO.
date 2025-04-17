@@ -89,10 +89,9 @@ public:
         }
 
         // publish corrected cloud
+        if (0)
         {
-            PointCloudType::Ptr corrected_cloud(new PointCloudType());
-            pcl::transformPointCloud(*cur_keyframe_cloud, *corrected_cloud, gicp.getFinalTransformation());
-            *curKeyframeCloud = *corrected_cloud;
+            *curKeyframeCloud = *unused_result;
         }
 
         float x, y, z, roll, pitch, yaw;
@@ -120,13 +119,100 @@ public:
         Vector6 << noiseScore, noiseScore, noiseScore, noiseScore, noiseScore, noiseScore;
         gtsam::noiseModel::Diagonal::shared_ptr constraintNoise = gtsam::noiseModel::Diagonal::Variances(Vector6);
 
+        float tmp1 = 0, tmp2 = 0, tmp3 = 0;
+        float loop_dis = correctionLidarFrame.translation().norm();
+
+#if 1
+        auto cur_p0 = copy_keyframe_pose6d->points[loop_key_cur - 2];
+        auto cur_p1 = copy_keyframe_pose6d->points[loop_key_cur - 1];
+        auto cur_p2 = copy_keyframe_pose6d->points[loop_key_cur];
+        V3F eigen_cp0(cur_p0.x, cur_p0.y, cur_p0.z);
+        V3F eigen_cp1(cur_p1.x, cur_p1.y, cur_p1.z);
+        V3F eigen_cp2(cur_p2.x, cur_p2.y, cur_p2.z);
+        V3F eigen_cp3 = tCorrect.translation();
+
+        auto ref_p1 = copy_keyframe_pose6d->points[loop_key_ref - 1];
+        auto ref_p2 = copy_keyframe_pose6d->points[loop_key_ref];
+        auto ref_p3 = copy_keyframe_pose6d->points[loop_key_ref + 1];
+        V3F eigen_rp1(ref_p1.x, ref_p1.y, ref_p1.z);
+        V3F eigen_rp2(ref_p2.x, ref_p2.y, ref_p2.z);
+        V3F eigen_rp3(ref_p3.x, ref_p3.y, ref_p3.z);
+
+        V3F direction_cp0 = eigen_cp1 - eigen_cp0;
+        V3F direction_cp1 = eigen_cp2 - eigen_cp1;
+        V3F direction_cp2 = eigen_cp3 - eigen_cp1;
+        V3F direction_rp1 = eigen_rp1 - eigen_rp2;
+        V3F direction_rp2 = eigen_rp2 - eigen_rp3;
+
+        if (direction_cp1.norm() > 0.5 && direction_cp2.norm() > 0.5 && direction_rp1.norm() > 0.5 && direction_rp2.norm() > 0.5)
+        {
+            auto calculateAngle = [](const Eigen::Vector3f &v1, const Eigen::Vector3f &v2) -> float
+            {
+                float dot = v1.dot(v2);
+                float norm_product = v1.norm() * v2.norm();
+                float cos_theta = std::abs(dot / norm_product);
+                return RAD2DEG(std::acos(cos_theta));
+            };
+
+            // 三点拟合直线，返回质心和方向向量
+            auto fitLineToThreePoints = [](const Vector3f &p1, const Vector3f &p2, const Vector3f &p3, Vector3f &centroid, Vector3f &direction)
+            {
+                centroid = (p1 + p2 + p3) / 3.0f;
+
+                Matrix3f centered;
+                centered.col(0) = p1 - centroid;
+                centered.col(1) = p2 - centroid;
+                centered.col(2) = p3 - centroid;
+
+                Matrix3f cov = (centered * centered.transpose()) / 2.0f;
+                SelfAdjointEigenSolver<Matrix3f> solver(cov);
+                direction = solver.eigenvectors().col(2);
+            };
+
+            // 计算点到直线的距离
+            auto distanceToLine = [](const Vector3f &point, const Vector3f &centroid, const Vector3f &direction) -> float
+            {
+                Vector3f vec = point - centroid;
+                Vector3f cross = vec.cross(direction);
+                return cross.norm() / direction.norm();
+            };
+
+            tmp1 = calculateAngle(direction_rp1, direction_rp2);
+            tmp2 = calculateAngle(direction_cp2, direction_rp1);
+            tmp3 = calculateAngle(direction_cp1, direction_cp2);
+            auto tmp4 = calculateAngle(direction_cp0, direction_cp1);
+            auto tmp5 = calculateAngle(direction_cp1, direction_rp1);
+
+            if (tmp1 < 2 && tmp4 < 2 && tmp2 > 5 && tmp2 < 18 || tmp3 > 70 && loop_dis > 7 || loop_dis > 30)
+            {
+                LOG_ERROR("dartion_time = %.2f.loop closure failed by %s! loop_dis = %.2f, angle1 = %.2f, angle2 = %.2f, angle3 = %.2f.", dartion_time, type.c_str(), loop_dis, tmp1, tmp2, tmp3);
+                return;
+            }
+
+            if (tmp1 < 2 && tmp4 < 2)
+            {
+                Vector3f centroid, direction;
+                fitLineToThreePoints(eigen_rp1, eigen_rp2, eigen_rp3, centroid, direction);
+                auto dis1 = distanceToLine(eigen_cp1, centroid, direction);
+                auto dis2 = distanceToLine(eigen_cp2, centroid, direction);
+                auto dis3 = distanceToLine(eigen_cp3, centroid, direction);
+                if ((dis1 > 3 || dis2 > 3) && (tmp5 > 3 && tmp5 < 40) && dis3 < 1)
+                {
+                    LOG_ERROR("dartion_time = %.2f.loop closure failed by %s! loop_dis = %.2f, dis1 = %.2f, dis2 = %.2f, dis3 = %.2f.", dartion_time, type.c_str(), loop_dis, dis1, dis2, dis3);
+                    return;
+                }
+            }
+        }
+#endif
+
         loop_mtx.lock();
         loop_constraint.loop_indexs.push_back(make_pair(loop_key_cur, loop_key_ref));
         loop_constraint.loop_pose_correct.push_back(poseFrom.between(poseTo));
         loop_constraint.loop_noise.push_back(constraintNoise);
         loop_mtx.unlock();
 
-        LOG_INFO("dartion_time = %.2f.Loop Factor Added by %s! keyframe id = %d, noise = %.3f.", dartion_time, type.c_str(), loop_key_ref, noiseScore);
+        LOG_INFO("dartion_time = %.2f.Loop Factor Added by %s! keyframe id = %d, noise = %.3f, loop_dis = %.2f, angle1 = %.2f, angle2 = %.2f, angle3 = %.2f.",
+                 dartion_time, type.c_str(), loop_key_ref, noiseScore, loop_dis, tmp1, tmp2, tmp3);
         loop_constraint_records[loop_key_cur] = loop_key_ref;
     }
 
