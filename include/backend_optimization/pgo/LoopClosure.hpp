@@ -191,13 +191,14 @@ public:
                 return;
             }
 
+            Vector3f centroid, direction;
+            fitLineToThreePoints(eigen_rp1, eigen_rp2, eigen_rp3, centroid, direction);
+            dis1 = distanceToLine(eigen_cp1, centroid, direction);
+            dis2 = distanceToLine(eigen_cp2, centroid, direction);
+            dis3 = distanceToLine(eigen_cp3, centroid, direction);
+
             if (tmp1 < 2 && tmp2 < 2)
             {
-                Vector3f centroid, direction;
-                fitLineToThreePoints(eigen_rp1, eigen_rp2, eigen_rp3, centroid, direction);
-                dis1 = distanceToLine(eigen_cp1, centroid, direction);
-                dis2 = distanceToLine(eigen_cp2, centroid, direction);
-                dis3 = distanceToLine(eigen_cp3, centroid, direction);
                 if ((dis1 > 3 || dis2 > 3) && (tmp4 > 3 && tmp4 < 40) && dis3 < 1)
                 {
                     LOG_FATAL("dartion_time = %.2f. loop_dis = %.2f, a1 = %.2f, a2 = %.2f, a3 = %.2f, a4 = %.2f, a5 = %.2f, dis1 = %.2f, dis2 = %.2f, dis3 = %.2f.",
