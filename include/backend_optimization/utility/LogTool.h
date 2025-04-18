@@ -72,7 +72,7 @@ enum LogLevel
 #define LOG_INFO(...) LOG_PRINT(info, "\033[0m", __VA_ARGS__)
 #define LOG_WARN(...) LOG_PRINT(warn, "\033[1;33m", __VA_ARGS__)
 #define LOG_ERROR(...) LOG_PRINT(error, "\033[1;31m", __VA_ARGS__)
-#define LOG_FATAL(...) LOG_PRINT(fatal, "\033[1;31m", __VA_ARGS__)
+#define LOG_FATAL(...) LOG_PRINT(fatal, "\033[1;35m", __VA_ARGS__)
 
 #define LOG_DEBUG_COND(cond, ...) if (cond) LOG_DEBUG(__VA_ARGS__)
 #define LOG_INFO_COND(cond, ...) if (cond) LOG_INFO(__VA_ARGS__)

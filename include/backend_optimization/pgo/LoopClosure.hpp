@@ -119,7 +119,8 @@ public:
         Vector6 << noiseScore, noiseScore, noiseScore, noiseScore, noiseScore, noiseScore;
         gtsam::noiseModel::Diagonal::shared_ptr constraintNoise = gtsam::noiseModel::Diagonal::Variances(Vector6);
 
-        float tmp1 = 0, tmp2 = 0, tmp3 = 0;
+        float tmp1 = 0, tmp2 = 0, tmp3 = 0, tmp4 = 0, tmp5 = 0;
+        float dis1 = 0, dis2 = 0, dis3 = 0;
         float loop_dis = correctionLidarFrame.translation().norm();
 
 #if 1
@@ -177,28 +178,30 @@ public:
                 return cross.norm() / direction.norm();
             };
 
-            tmp1 = calculateAngle(direction_rp1, direction_rp2);
-            tmp2 = calculateAngle(direction_cp2, direction_rp1);
-            tmp3 = calculateAngle(direction_cp1, direction_cp2);
-            auto tmp4 = calculateAngle(direction_cp0, direction_cp1);
-            auto tmp5 = calculateAngle(direction_cp1, direction_rp1);
+            tmp1 = calculateAngle(direction_rp1, direction_rp2);        // 小，ref按直线运动
+            tmp2 = calculateAngle(direction_cp0, direction_cp1);        // 小，当前按直线运动
+            tmp3 = calculateAngle(direction_cp2, direction_rp1);        // ref和当前运动方向修正后方向，判断修正后方向平行
+            tmp4 = calculateAngle(direction_cp1, direction_rp1);        // ref和当前运动方向修正前方向，用于提取跑偏后的情况
+            tmp5 = calculateAngle(direction_cp1, direction_cp2);        // 当前修正的delta方向
 
-            if (tmp1 < 2 && tmp4 < 2 && tmp2 > 5 && tmp2 < 18 || tmp3 > 70 && loop_dis > 7 || loop_dis > 30)
+            if (tmp1 < 2 && tmp2 < 2 && tmp3 > 5 && tmp3 < 18 || tmp5 > 70 && loop_dis > 7 || loop_dis > 30)
             {
-                LOG_ERROR("dartion_time = %.2f.loop closure failed by %s! loop_dis = %.2f, angle1 = %.2f, angle2 = %.2f, angle3 = %.2f.", dartion_time, type.c_str(), loop_dis, tmp1, tmp2, tmp3);
+                LOG_ERROR("dartion_time = %.2f. loop_dis = %.2f, a1 = %.2f, a2 = %.2f, a3 = %.2f, a4 = %.2f, a5 = %.2f.",
+                          dartion_time, loop_dis, tmp1, tmp2, tmp3, tmp4, tmp5);
                 return;
             }
 
-            if (tmp1 < 2 && tmp4 < 2)
+            if (tmp1 < 2 && tmp2 < 2)
             {
                 Vector3f centroid, direction;
                 fitLineToThreePoints(eigen_rp1, eigen_rp2, eigen_rp3, centroid, direction);
-                auto dis1 = distanceToLine(eigen_cp1, centroid, direction);
-                auto dis2 = distanceToLine(eigen_cp2, centroid, direction);
-                auto dis3 = distanceToLine(eigen_cp3, centroid, direction);
-                if ((dis1 > 3 || dis2 > 3) && (tmp5 > 3 && tmp5 < 40) && dis3 < 1)
+                dis1 = distanceToLine(eigen_cp1, centroid, direction);
+                dis2 = distanceToLine(eigen_cp2, centroid, direction);
+                dis3 = distanceToLine(eigen_cp3, centroid, direction);
+                if ((dis1 > 3 || dis2 > 3) && (tmp4 > 3 && tmp4 < 40) && dis3 < 1)
                 {
-                    LOG_ERROR("dartion_time = %.2f.loop closure failed by %s! loop_dis = %.2f, dis1 = %.2f, dis2 = %.2f, dis3 = %.2f.", dartion_time, type.c_str(), loop_dis, dis1, dis2, dis3);
+                    LOG_FATAL("dartion_time = %.2f. loop_dis = %.2f, a1 = %.2f, a2 = %.2f, a3 = %.2f, a4 = %.2f, a5 = %.2f, dis1 = %.2f, dis2 = %.2f, dis3 = %.2f.",
+                              dartion_time, loop_dis, tmp1, tmp2, tmp3, tmp4, tmp5, dis1, dis2, dis3);
                     return;
                 }
             }
@@ -211,8 +214,8 @@ public:
         loop_constraint.loop_noise.push_back(constraintNoise);
         loop_mtx.unlock();
 
-        LOG_INFO("dartion_time = %.2f.Loop Factor Added by %s! keyframe id = %d, noise = %.3f, loop_dis = %.2f, angle1 = %.2f, angle2 = %.2f, angle3 = %.2f.",
-                 dartion_time, type.c_str(), loop_key_ref, noiseScore, loop_dis, tmp1, tmp2, tmp3);
+        LOG_INFO("dartion_time = %.2f.Loop Factor Added by %s! keyframe id = %d, noise = %.3f, loop_dis = %.2f, a1 = %.2f, a2 = %.2f, a3 = %.2f, a4 = %.2f, a5 = %.2f, dis1 = %.2f, dis2 = %.2f, dis3 = %.2f.",
+                 dartion_time, type.c_str(), loop_key_ref, noiseScore, loop_dis, tmp1, tmp2, tmp3, tmp4, tmp5, dis1, dis2, dis3);
         loop_constraint_records[loop_key_cur] = loop_key_ref;
     }
 
