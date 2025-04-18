@@ -14,6 +14,7 @@ public:
     {
         copy_keyframe_pose6d.reset(new pcl::PointCloud<PointXYZIRPYT>());
         kdtree_history_keyframe_pose.reset(new pcl::KdTreeFLANN<PointXYZIRPYT>());
+        kdtree_submap.reset(new pcl::KdTreeFLANN<PointType>());
 
         curKeyframeCloud.reset(new PointCloudType());
         prevKeyframeCloud.reset(new PointCloudType());
@@ -185,6 +186,7 @@ public:
             tmp4 = calculateAngle(direction_cp1, direction_rp1);        // ref和当前运动方向修正前方向，用于提取跑偏后的情况
             tmp5 = calculateAngle(direction_cp1, direction_cp2);        // 当前修正的delta方向
 
+#if 1
             // if (tmp1 < 2 && tmp2 < 2 && tmp3 > 5 && tmp3 < 18 || tmp5 > 70 && loop_dis > 7 || loop_dis > 30)
             if (tmp5 > 70 && loop_dis > 7 || loop_dis > 30)
             {
@@ -195,7 +197,9 @@ public:
                           dartion_time, loop_dis, tmp1, tmp2, tmp3, tmp4, tmp5);
                 return;
             }
+#endif
 
+#if 1
             Vector3f centroid, direction;
             fitLineToThreePoints(eigen_rp1, eigen_rp2, eigen_rp3, centroid, direction);
             dis1 = distanceToLine(eigen_cp1, centroid, direction);
@@ -209,12 +213,54 @@ public:
                     savePCDFile(PCD_FILE_DIR("src/" + to_string(index) + "src.pcd"), *unused_result);
                     savePCDFile(PCD_FILE_DIR("tag/" + to_string(index) + "tag.pcd"), *ref_near_keyframe_cloud);
                     ++index;
-                    LOG_FATAL("dartion_time = %.2f. loop_dis = %.2f, a1 = %.2f, a2 = %.2f, a3 = %.2f, a4 = %.2f, a5 = %.2f, dis1 = %.2f, dis2 = %.2f, dis3 = %.2f.",
+                    LOG_ERROR("dartion_time = %.2f. loop_dis = %.2f, a1 = %.2f, a2 = %.2f, a3 = %.2f, a4 = %.2f, a5 = %.2f, dis1 = %.2f, dis2 = %.2f, dis3 = %.2f.",
                               dartion_time, loop_dis, tmp1, tmp2, tmp3, tmp4, tmp5, dis1, dis2, dis3);
                     return;
                 }
             }
         }
+#endif
+
+#if 1
+        Timer timer;
+        int point_in_range_num = 0;
+        std::vector<int> indices;
+        std::vector<float> distances;
+        PointXYZIRPYT pose_correct;
+        pose_correct.x = x;
+        pose_correct.y = y;
+        pose_correct.z = z;
+        pose_correct.roll = roll;
+        pose_correct.pitch = pitch;
+        pose_correct.yaw = yaw;
+
+        kdtree_submap->setInputCloud(ref_near_keyframe_cloud);
+        *cur_keyframe_cloud = *pointcloudKeyframeToWorld(keyframe_scan[loop_key_cur], pose_correct);
+
+        for (auto i = 0; i < cur_keyframe_cloud->size(); ++i)
+        {
+            kdtree_submap->radiusSearch(cur_keyframe_cloud->points[i], 0.5, indices, distances, 1);
+            if (distances.size() == 1)
+            {
+                ++point_in_range_num;
+            }
+        }
+        int points_num_out_of_range = cur_keyframe_cloud->points.size() - point_in_range_num;
+        if (points_num_out_of_range > cur_keyframe_cloud->points.size() * 0.2)
+        {
+            LOG_FATAL("points_num_out_of_range  = %d, total = %lu, outof_per = %f, cost ms = %f.",
+                      points_num_out_of_range, cur_keyframe_cloud->points.size(),
+                      points_num_out_of_range * 1.0 / cur_keyframe_cloud->points.size(), timer.elapsedLast());
+            return;
+        }
+        else
+        {
+            LOG_INFO("points_num_out_of_range  = %d, total = %lu, outof_per = %f, cost ms = %f.",
+                      points_num_out_of_range, cur_keyframe_cloud->points.size(),
+                      points_num_out_of_range * 1.0 / cur_keyframe_cloud->points.size(), timer.elapsedLast());
+        }
+#endif
+
 #endif
 
         loop_mtx.lock();
@@ -346,6 +392,7 @@ public:
 
     pcl::PointCloud<PointXYZIRPYT>::Ptr copy_keyframe_pose6d;
     pcl::KdTreeFLANN<PointXYZIRPYT>::Ptr kdtree_history_keyframe_pose;
+    pcl::KdTreeFLANN<PointType>::Ptr kdtree_submap;
 
     unordered_map<int, int> loop_constraint_records; // <new, old>, keyframe index that has added loop constraint
     LoopConstraint loop_constraint;
