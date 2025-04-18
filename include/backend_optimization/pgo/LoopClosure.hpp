@@ -124,6 +124,7 @@ public:
         float loop_dis = correctionLidarFrame.translation().norm();
 
 #if 1
+        static int index = 0;
         auto cur_p0 = copy_keyframe_pose6d->points[loop_key_cur - 2];
         auto cur_p1 = copy_keyframe_pose6d->points[loop_key_cur - 1];
         auto cur_p2 = copy_keyframe_pose6d->points[loop_key_cur];
@@ -184,8 +185,12 @@ public:
             tmp4 = calculateAngle(direction_cp1, direction_rp1);        // ref和当前运动方向修正前方向，用于提取跑偏后的情况
             tmp5 = calculateAngle(direction_cp1, direction_cp2);        // 当前修正的delta方向
 
-            if (tmp1 < 2 && tmp2 < 2 && tmp3 > 5 && tmp3 < 18 || tmp5 > 70 && loop_dis > 7 || loop_dis > 30)
+            // if (tmp1 < 2 && tmp2 < 2 && tmp3 > 5 && tmp3 < 18 || tmp5 > 70 && loop_dis > 7 || loop_dis > 30)
+            if (tmp5 > 70 && loop_dis > 7 || loop_dis > 30)
             {
+                savePCDFile(PCD_FILE_DIR("src/" + to_string(index) + "src.pcd"), *unused_result);
+                savePCDFile(PCD_FILE_DIR("tag/" + to_string(index) + "tag.pcd"), *ref_near_keyframe_cloud);
+                ++index;
                 LOG_ERROR("dartion_time = %.2f. loop_dis = %.2f, a1 = %.2f, a2 = %.2f, a3 = %.2f, a4 = %.2f, a5 = %.2f.",
                           dartion_time, loop_dis, tmp1, tmp2, tmp3, tmp4, tmp5);
                 return;
@@ -201,6 +206,9 @@ public:
             {
                 if ((dis1 > 3 || dis2 > 3) && (tmp4 > 3 && tmp4 < 40) && dis3 < 1)
                 {
+                    savePCDFile(PCD_FILE_DIR("src/" + to_string(index) + "src.pcd"), *unused_result);
+                    savePCDFile(PCD_FILE_DIR("tag/" + to_string(index) + "tag.pcd"), *ref_near_keyframe_cloud);
+                    ++index;
                     LOG_FATAL("dartion_time = %.2f. loop_dis = %.2f, a1 = %.2f, a2 = %.2f, a3 = %.2f, a4 = %.2f, a5 = %.2f, dis1 = %.2f, dis2 = %.2f, dis3 = %.2f.",
                               dartion_time, loop_dis, tmp1, tmp2, tmp3, tmp4, tmp5, dis1, dis2, dis3);
                     return;
@@ -215,6 +223,9 @@ public:
         loop_constraint.loop_noise.push_back(constraintNoise);
         loop_mtx.unlock();
 
+        savePCDFile(PCD_FILE_DIR("src/" + to_string(index) + "src.pcd"), *unused_result);
+        savePCDFile(PCD_FILE_DIR("tag/" + to_string(index) + "tag.pcd"), *ref_near_keyframe_cloud);
+        ++index;
         LOG_INFO("dartion_time = %.2f.Loop Factor Added by %s! keyframe id = %d, noise = %.3f, loop_dis = %.2f, a1 = %.2f, a2 = %.2f, a3 = %.2f, a4 = %.2f, a5 = %.2f, dis1 = %.2f, dis2 = %.2f, dis3 = %.2f.",
                  dartion_time, type.c_str(), loop_key_ref, noiseScore, loop_dis, tmp1, tmp2, tmp3, tmp4, tmp5, dis1, dis2, dis3);
         loop_constraint_records[loop_key_cur] = loop_key_ref;
