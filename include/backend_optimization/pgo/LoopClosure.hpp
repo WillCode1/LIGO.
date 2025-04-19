@@ -222,7 +222,6 @@ public:
 #endif
 
 #if 1
-        Timer timer;
         int point_in_range_num = 0;
         std::vector<int> indices;
         std::vector<float> distances;
@@ -248,16 +247,16 @@ public:
         int points_num_out_of_range = cur_keyframe_cloud->points.size() - point_in_range_num;
         if (points_num_out_of_range > cur_keyframe_cloud->points.size() * 0.2)
         {
-            LOG_FATAL("points_num_out_of_range  = %d, total = %lu, outof_per = %f, cost ms = %f.",
+            LOG_FATAL("points_num_out_of_range  = %d, total = %lu, outof_per = %f.",
                       points_num_out_of_range, cur_keyframe_cloud->points.size(),
-                      points_num_out_of_range * 1.0 / cur_keyframe_cloud->points.size(), timer.elapsedLast());
+                      points_num_out_of_range * 1.0 / cur_keyframe_cloud->points.size());
             return;
         }
         else
         {
-            LOG_INFO("points_num_out_of_range  = %d, total = %lu, outof_per = %f, cost ms = %f.",
+            LOG_INFO("points_num_out_of_range  = %d, total = %lu, outof_per = %f.",
                       points_num_out_of_range, cur_keyframe_cloud->points.size(),
-                      points_num_out_of_range * 1.0 / cur_keyframe_cloud->points.size(), timer.elapsedLast());
+                      points_num_out_of_range * 1.0 / cur_keyframe_cloud->points.size());
         }
 #endif
 
