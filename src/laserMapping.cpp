@@ -1856,6 +1856,8 @@ int main(int argc, char** argv)
 #ifdef PGO
     backend.save_trajectory();
     backend.save_globalmap();
+    if (save_pgm)
+        backend.save_pgm(pgm_resolution, min_z, max_z);
 #endif
 #if 0
     //--------------------------save map-----------------------------------
