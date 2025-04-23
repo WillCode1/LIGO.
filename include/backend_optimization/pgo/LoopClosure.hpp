@@ -6,6 +6,7 @@
 #include <pcl/registration/gicp.h>
 #include "../Header.h"
 #include "../global_localization/scancontext/Scancontext.h"
+#include "backend_optimization/utility/manually_correct_loop_closure.h"
 
 class LoopClosure
 {
@@ -16,7 +17,7 @@ public:
         kdtree_history_keyframe_pose.reset(new pcl::KdTreeFLANN<PointXYZIRPYT>());
         kdtree_submap.reset(new pcl::KdTreeFLANN<PointType>());
 
-        curKeyframeCloud.reset(new PointCloudType());
+        unused_result.reset(new PointCloudType());
         prevKeyframeCloud.reset(new PointCloudType());
 
         loop_vaild_period["odom"] = std::vector<double>();
@@ -77,11 +78,25 @@ public:
 
         gicp.setInputSource(cur_keyframe_cloud);
         gicp.setInputTarget(ref_near_keyframe_cloud);
-        PointCloudType::Ptr unused_result(new PointCloudType());
         if (use_guess)
             gicp.align(*unused_result, init_guess);
         else
             gicp.align(*unused_result);
+
+        float loop_closure_fitness_score_thld = 0;
+        if (loop_closure_fitness_use_adaptability)
+        {
+            if (dartion_time - last_loop_time > 40)
+            {
+                loop_closure_fitness_score_thld = loop_closure_fitness_score_thld_max;
+            }
+            else
+            {
+                loop_closure_fitness_score_thld = loop_closure_fitness_score_thld_min + (loop_closure_fitness_score_thld_max - loop_closure_fitness_score_thld_min) * 0.025 * (dartion_time - last_loop_time);
+            }
+        }
+        else
+            loop_closure_fitness_score_thld = loop_closure_fitness_score_thld_min;
 
         if (gicp.hasConverged() == false || gicp.getFitnessScore() > loop_closure_fitness_score_thld)
         {
@@ -89,22 +104,16 @@ public:
             return;
         }
 
-        // publish corrected cloud
-        if (0)
-        {
-            *curKeyframeCloud = *unused_result;
-        }
-
         float x, y, z, roll, pitch, yaw;
         Eigen::Affine3f correctionLidarFrame;
         correctionLidarFrame = gicp.getFinalTransformation();
         float noiseScore = gicp.getFitnessScore();
 
-#if 0
+#if 1
         if (is_vaild_loop_time_period(dartion_time, loop_vaild_period["manually"]))
         {
-            pcl::getTranslationAndEulerAngles(correctionLidarFrame, trans_state[0], trans_state[1], trans_state[2], trans_state[3], trans_state[4], trans_state[5]);
-            noiseScore = manually_adjust_loop_closure(ref_near_keyframe_cloud, cur_keyframe_cloud, correctionLidarFrame);
+            pcl::getTranslationAndEulerAngles(correctionLidarFrame, mclc.trans_state[0], mclc.trans_state[1], mclc.trans_state[2], mclc.trans_state[3], mclc.trans_state[4], mclc.trans_state[5]);
+            noiseScore = mclc.manually_adjust_loop_closure(ref_near_keyframe_cloud, cur_keyframe_cloud, correctionLidarFrame);
         }
 #endif
 
@@ -262,6 +271,8 @@ public:
 
 #endif
 
+        last_loop_time = dartion_time;
+
         loop_mtx.lock();
         loop_constraint.loop_indexs.push_back(make_pair(loop_key_cur, loop_key_ref));
         loop_constraint.loop_pose_correct.push_back(poseFrom.between(poseTo));
@@ -386,7 +397,9 @@ public:
     float loop_closure_search_radius = 10;
     int loop_closure_keyframe_interval = 30;
     int keyframe_search_num = 20;
-    float loop_closure_fitness_score_thld = 0.05;
+    bool loop_closure_fitness_use_adaptability = false;
+    float loop_closure_fitness_score_thld_min = 0.05;
+    float loop_closure_fitness_score_thld_max = 0.05;
     float icp_downsamp_size = 0.1;
 
     pcl::PointCloud<PointXYZIRPYT>::Ptr copy_keyframe_pose6d;
@@ -398,7 +411,9 @@ public:
     std::shared_ptr<ScanContext::SCManager> sc_manager; // scan context
 
     // for visualize
+    double last_loop_time = 0;
     double dartion_time;
-    PointCloudType::Ptr curKeyframeCloud;
+    PointCloudType::Ptr unused_result;
     PointCloudType::Ptr prevKeyframeCloud;
+    ManuallyCorrectLoopClosure mclc;
 };
