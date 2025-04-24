@@ -2,6 +2,7 @@
 #include <pcl/registration/gicp.h>
 #include <pcl/search/kdtree.h>
 #include <pcl/visualization/pcl_visualizer.h>
+#include <pangolin/pangolin.h>
 #include "../Header.h"
 
 class ManuallyCorrectLoopClosure
@@ -128,50 +129,80 @@ public:
 
     double manually_adjust_loop_closure(PointCloudType::Ptr submap, PointCloudType::Ptr scan, Eigen::Affine3f &transform)
     {
-        pcl::visualization::PCLVisualizer::Ptr viewer(new pcl::visualization::PCLVisualizer("3D Viewer"));
+        // 创建Pangolin窗口
+        pangolin::CreateWindowAndBind("Point Cloud Tuning", 1280, 720);
+        glEnable(GL_DEPTH_TEST);
 
-        // backup
-        trans_state_backup = trans_state;
+        // 设置相机
+        pangolin::OpenGlRenderState s_cam(
+            pangolin::ProjectionMatrix(1280, 720, 420, 420, 640, 360, 0.1, 1000),
+            pangolin::ModelViewLookAt(0, -2, -2, 0, 0, 0, pangolin::AxisZ));
 
-        transform = pcl::getTransformation(trans_state[0], trans_state[1], trans_state[2], trans_state[3], trans_state[4], trans_state[5]);
-        PointCloudType::Ptr transformedCloud(new PointCloudType);
-        pcl::transformPointCloud(*scan, *transformedCloud, transform);
+        // 创建3D显示区域
+        pangolin::View &d_cam = pangolin::CreateDisplay()
+                                    .SetBounds(0.0, 1.0, 0.0, 1.0)
+                                    .SetHandler(new pangolin::Handler3D(s_cam));
 
-        // 添加点云到可视化窗口
-        viewer->addPointCloud<PointType>(submap, "submap");
-        viewer->addPointCloud<PointType>(transformedCloud, "scan");
+        // 创建UI面板
+        pangolin::CreatePanel("ui").SetBounds(0.0, 1.0, 0.0, 180.0f / 720.0f);
 
-        // 设置点云渲染属性
-        viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "submap");
-        viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "scan");
+        // 添加滑块
+        pangolin::Var<float> trans_x("ui.X Translation", 0.0f, -1.0f, 1.0f);
+        pangolin::Var<float> trans_y("ui.Y Translation", 0.0f, -1.0f, 1.0f);
+        pangolin::Var<float> trans_z("ui.Z Translation", 0.0f, -1.0f, 1.0f);
+        pangolin::Var<float> rot_z("ui.Z Rotation (rad)", 0.0f, -3.14f, 3.14f);
 
-        char buffer[1024];
-        sprintf(buffer, "current_pose (x=%f, y=%f, z=%f, roll=%f, pitch=%f, yaw=%f), offset (x=%.2f, y=%.2f, z=%.2f, roll=%.3f, pitch=%.3f, yaw=%.3f)",
-                trans_state[0], trans_state[1], trans_state[2], trans_state[3], trans_state[4], trans_state[5], offset[0], offset[1], offset[2], offset[3], offset[4], offset[5]);
-        viewer->addText(buffer, 50, 50, "text_1");
-
-        // 注册键盘事件回调函数
-        viewer->registerKeyboardCallback(&ManuallyCorrectLoopClosure::keyboardEventCallback, *this, viewer.get());
-
-        double score = 0;
-        // 循环显示
-        while (!viewer->wasStopped())
+        // 主循环
+        while (!pangolin::ShouldQuit())
         {
-            score = getFitnessScore(submap, scan, transform, 2);
-            sprintf(buffer, "current_pose (x=%.3f, y=%.3f, z=%.3f, roll=%.3f, pitch=%.3f, yaw=%.3f), offset (x=%.2f, y=%.2f, z=%.2f, roll=%.3f, pitch=%.3f, yaw=%.3f), config=(%d, %d), FitnessScore=%lf",
-                    trans_state[0], trans_state[1], trans_state[2], trans_state[3], trans_state[4], trans_state[5],
-                    offset[0], offset[1], offset[2], offset[3], offset[4], offset[5], trans_state_index + 1, offset_index + 1, score);
-            viewer->updateText(buffer, 50, 50, "text_1");
+            // 清除屏幕
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            transform = pcl::getTransformation(trans_state[0], trans_state[1], trans_state[2], trans_state[3], trans_state[4], trans_state[5]);
-            pcl::transformPointCloud(*scan, *transformedCloud, transform);
-            viewer->updatePointCloud<PointType>(transformedCloud, "scan");
+            // 激活3D显示
+            d_cam.Activate(s_cam);
 
-            viewer->spinOnce();
+            // 绘制子地图（红色）
+            glColor3f(1.0f, 0.0f, 0.0f);
+            glBegin(GL_POINTS);
+            for (const auto &point : submap->points)
+            {
+                glVertex3f(point.x, point.y, point.z);
+            }
+            glEnd();
+
+            // 计算变换
+            Eigen::Affine3f transform = Eigen::Affine3f::Identity();
+            transform.translation() = Eigen::Vector3f(trans_x, trans_y, trans_z);
+            transform.rotate(Eigen::AngleAxisf(rot_z, Eigen::Vector3f::UnitZ()));
+
+            // 变换扫描点云
+            PointCloudType::Ptr transformed_scan(new PointCloudType);
+            pcl::transformPointCloud(*scan, *transformed_scan, transform);
+
+            // 绘制变换后的扫描点云（绿色）
+            glColor3f(0.0f, 1.0f, 0.0f);
+            glBegin(GL_POINTS);
+            for (const auto &point : transformed_scan->points)
+            {
+                glVertex3f(point.x, point.y, point.z);
+            }
+            glEnd();
+
+            // 计算并打印适配度评分
+            if (pangolin::GuiVarHasChanged())
+            {
+                double fs = getFitnessScore(submap, scan, transform, 2);
+                std::cout << "适配度评分: " << fs << std::endl;
+                // pangolin::Text("Hello, Pangolin!", 10, 10);
+                // pangolin::default_font().Text("你好，世界！").Draw(10, 10, 0);
+            }
+
+            // 完成帧渲染
+            pangolin::FinishFrame();
         }
 
-        viewer->close();
-        return score;
+        pangolin::DestroyWindow("Point Cloud Tuning");
+        return 0;
     }
 
 public:

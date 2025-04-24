@@ -75,6 +75,7 @@ find_package(PCL 1.8 REQUIRED)
 find_package(Ceres REQUIRED)
 find_package(Sophus REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization timer thread chrono)
+find_package(Pangolin REQUIRED)
 
 message(Eigen: ${EIGEN3_INCLUDE_DIR})
 
@@ -87,6 +88,7 @@ include_directories(
   ${GTSAM_INCLUDE_DIR}
   ${CERES_INCLUDE_DIRS}
   ${PYTHON_INCLUDE_DIRS}
+  ${Pangolin_INCLUDE_DIRS}
   include)
 
 link_directories(
@@ -121,7 +123,7 @@ add_executable(ligo_mapping src/laserMapping.cpp
                 include/backend_optimization/global_localization/scancontext/Scancontext.cpp
                 include/backend_optimization/global_localization/InitCoordinate.cpp
                 include/backend_optimization/interface_ros1.cpp)
-target_link_libraries(ligo_mapping ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${CERES_LIBRARIES} ${OpenCV_LIBS} ${PYTHON_LIBRARIES} ceres gtsam stdc++fs)
+target_link_libraries(ligo_mapping ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${CERES_LIBRARIES} ${OpenCV_LIBS} ${PYTHON_LIBRARIES} ${Pangolin_LIBRARIES} ceres gtsam stdc++fs)
 # target_link_libraries(ligo_mapping dw)
 target_link_libraries(ligo_mapping ${Sophus_LIBRARIES} fmt)
 # target_include_directories(ligo_mapping PRIVATE ${PYTHON_INCLUDE_DIRS})
