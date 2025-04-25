@@ -44,121 +44,101 @@ public:
             return (std::numeric_limits<double>::max());
     }
 
-    // 键盘事件回调函数
-    void keyboardEventCallback(const pcl::visualization::KeyboardEvent &event, void *viewer_void)
+    double manually_adjust_loop_closure(PointCloudType::Ptr submap, PointCloudType::Ptr scan, Eigen::Affine3f &tuningtransform, bool &reject_this_loop)
     {
-        pcl::visualization::PCLVisualizer *viewer = static_cast<pcl::visualization::PCLVisualizer *>(viewer_void);
+        // 计算点云边界
+        float min_x = std::numeric_limits<float>::max(), max_x = -min_x;
+        float min_y = min_x, max_y = -min_x, min_z = min_x, max_z = -min_x;
+        for (const auto &point : scan->points)
+        {
+            min_x = std::min(min_x, point.x);
+            max_x = std::max(max_x, point.x);
+            min_y = std::min(min_y, point.y);
+            max_y = std::max(max_y, point.y);
+            min_z = std::min(min_z, point.z);
+            max_z = std::max(max_z, point.z);
+        }
+        Eigen::Vector3f center((min_x + max_x) / 2, (min_y + max_y) / 2, (min_z + max_z) / 2);
+        float size = std::max({max_x - min_x, max_y - min_y, max_z - min_z});
+        float distance = 40;
 
-        if (event.getKeySym() == "q" && event.keyDown())
-        {
-            viewer->close();
-        }
-        else if (event.getKeySym() == "r" && event.keyDown())
-        {
-            trans_state = trans_state_backup;
-        }
-        else if (event.getKeySym() == "s" && event.keyDown())
-        {
-            viewer->saveScreenshot(string(ROOT_DIR) + "/screenshot.png");
-        }
-        else if (event.getKeySym() == "exclam" && event.keyDown())
-        {
-            offset_index = 0;
-        }
-        else if (event.getKeySym() == "at" && event.keyDown())
-        {
-            offset_index = 1;
-        }
-        else if (event.getKeySym() == "numbersign" && event.keyDown())
-        {
-            offset_index = 2;
-        }
-        else if (event.getKeySym() == "dollar" && event.keyDown())
-        {
-            offset_index = 3;
-        }
-        else if (event.getKeySym() == "percent" && event.keyDown())
-        {
-            offset_index = 4;
-        }
-        else if (event.getKeySym() == "asciicircum" && event.keyDown())
-        {
-            offset_index = 5;
-        }
-        else if (event.getKeySym() == "1")
-        {
-            trans_state_index = 0;
-        }
-        else if (event.getKeySym() == "2")
-        {
-            trans_state_index = 1;
-        }
-        else if (event.getKeySym() == "3")
-        {
-            trans_state_index = 2;
-        }
-        else if (event.getKeySym() == "4")
-        {
-            trans_state_index = 3;
-        }
-        else if (event.getKeySym() == "5")
-        {
-            trans_state_index = 4;
-        }
-        else if (event.getKeySym() == "6")
-        {
-            trans_state_index = 5;
-        }
-        else if (event.getKeySym() == "Up" && event.keyDown() && event.isShiftPressed())
-        {
-            offset[offset_index] += 0.01;
-        }
-        else if (event.getKeySym() == "Down" && event.keyDown() && event.isShiftPressed())
-        {
-            offset[offset_index] -= 0.01;
-        }
-        else if (event.getKeySym() == "Up" && event.keyDown())
-        {
-            trans_state[trans_state_index] += offset[trans_state_index];
-        }
-        else if (event.getKeySym() == "Down" && event.keyDown())
-        {
-            trans_state[trans_state_index] -= offset[trans_state_index];
-        }
-    }
-
-    double manually_adjust_loop_closure(PointCloudType::Ptr submap, PointCloudType::Ptr scan, Eigen::Affine3f &tuningtransform)
-    {
         // 创建Pangolin窗口
-        pangolin::CreateWindowAndBind("Point Cloud Tuning", 1280, 720);
+        const int window_width = 1920;
+        const int window_height = 1080;
+        pangolin::CreateWindowAndBind("Loop Closure Tuning", window_width, window_height);
         glEnable(GL_DEPTH_TEST);
 
+        Eigen::Vector3f eye(center.x(), center.y(), center.z() + distance);
+        Eigen::Vector3f look = (center - eye).normalized();
+        Eigen::Vector3f up(0, 1, 0);
+
+        // 计算3D视图中心
+        const float ui_width = 180.0f; // UI面板固定宽度
+        float view_width = window_width - ui_width;
+        float u0 = ui_width + view_width / 2;
+        float v0 = window_height / 2;
+
         // 设置相机
-        pangolin::OpenGlRenderState s_cam(
-            pangolin::ProjectionMatrix(1280, 720, 420, 420, 640, 360, 0.1, 1000),
-            pangolin::ModelViewLookAt(0, -2, -2, 0, 0, 0, pangolin::AxisZ));
+        pangolin::OpenGlRenderState s_cam = pangolin::OpenGlRenderState(
+            pangolin::ProjectionMatrix(window_width, window_height, 420, 420, u0, v0, 0.1, size * 10),
+            pangolin::ModelViewLookAt(eye.x(), eye.y(), eye.z(),
+                                      center.x(), center.y(), center.z(),
+                                      up.x(), up.y(), up.z()));
 
         // 创建3D显示区域
         pangolin::View &d_cam = pangolin::CreateDisplay()
-                                    .SetBounds(0.0, 1.0, 0.0, 1.0)
+                                    .SetBounds(0.0, 1.0, ui_width / window_width, 1.0)
                                     .SetHandler(new pangolin::Handler3D(s_cam));
 
         // 创建UI面板
-        pangolin::CreatePanel("ui").SetBounds(0.0, 1.0, 0.0, 180.0f / 720.0f);
+        pangolin::CreatePanel("ui").SetBounds(0.0, 1.0, 0.0, ui_width / window_width);
 
         // 添加滑块
-        pangolin::Var<float> trans_x("ui.X Translation", 0.0f, -1.0f, 1.0f);
-        pangolin::Var<float> trans_y("ui.Y Translation", 0.0f, -1.0f, 1.0f);
-        pangolin::Var<float> trans_z("ui.Z Translation", 0.0f, -1.0f, 1.0f);
-        pangolin::Var<float> rot_x("ui.X Rotation (rad)", 0.0f, -0.2f, 0.2f);
-        pangolin::Var<float> rot_y("ui.Y Rotation (rad)", 0.0f, -0.2f, 0.2f);
-        pangolin::Var<float> rot_z("ui.Z Rotation (rad)", 0.0f, -3.14f, 3.14f);
-        pangolin::Var<float> fitness_score("ui.Fitness Score", 1.0f);
+        pangolin::Var<float> trans_x("ui.X Trans", 0.0f, -5.0f, 5.0f);
+        pangolin::Var<float> trans_y("ui.Y Trans", 0.0f, -5.0f, 5.0f);
+        pangolin::Var<float> trans_z("ui.Z Trans", 0.0f, -1.0f, 1.0f);
+        pangolin::Var<float> rot_x("ui.Roll (rad)", 0.0f, RAD2DEG(-0.2f), RAD2DEG(0.2f));
+        pangolin::Var<float> rot_y("ui.Pitch (rad)", 0.0f, RAD2DEG(-0.2f), RAD2DEG(0.2f));
+        pangolin::Var<float> rot_z("ui.Yaw (rad)", 0.0f, RAD2DEG(-3.14f), RAD2DEG(3.14f));
+        pangolin::Var<bool> reset("ui.Reset", false, false);
+        pangolin::Var<float> fitness_score("ui.Score", 1.0f);
+        pangolin::Var<bool> screenshot("ui.Screen Shot", false, false);
+        pangolin::Var<bool> reject_loop("ui.Reject loop", false, false);
 
+        bool first_run = true;
         while (!pangolin::ShouldQuit())
         {
             // 清除屏幕
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            if (first_run || reset.GuiChanged())
+            {
+                trans_x = 0.0f;
+                trans_y = 0.0f;
+                trans_z = 0.0f;
+                rot_x = 0.0f;
+                rot_y = 0.0f;
+                rot_z = 0.0f;
+                reset = false;
+                first_run = false;
+            }
+
+#if 0
+            // 检测截屏按钮
+            if (screenshot.GuiChanged())
+            {
+                std::time_t now = std::time(nullptr);
+                std::stringstream ss;
+                ss << "./screenshot_" << std::put_time(std::localtime(&now), "%Y%m%d_%H%M%S") << ".png";
+                d_cam.SaveRenderNow(ss.str());
+                std::cout << "截屏已保存为 " << ss.str() << std::endl;
+            }
+#endif
+
+            if (reject_loop.GuiChanged())
+            {
+                reject_this_loop = true;
+            }
 
             // 激活3D显示
             d_cam.Activate(s_cam);
@@ -173,10 +153,11 @@ public:
             glEnd();
 
             // 计算变换
+            tuningtransform.setIdentity();
             tuningtransform.translation() = Eigen::Vector3f(trans_x, trans_y, trans_z);
-            tuningtransform.rotate(Eigen::AngleAxisf(rot_z, Eigen::Vector3f::UnitZ()) *
-                                   Eigen::AngleAxisf(rot_y, Eigen::Vector3f::UnitY()) *
-                                   Eigen::AngleAxisf(rot_x, Eigen::Vector3f::UnitX()));
+            tuningtransform.rotate(Eigen::AngleAxisf(DEG2RAD(rot_z), Eigen::Vector3f::UnitZ()) *
+                                   Eigen::AngleAxisf(DEG2RAD(rot_y), Eigen::Vector3f::UnitY()) *
+                                   Eigen::AngleAxisf(DEG2RAD(rot_x), Eigen::Vector3f::UnitX()));
 
             PointCloudType::Ptr transformed_scan(new PointCloudType);
             pcl::transformPointCloud(*scan, *transformed_scan, tuningtransform);
@@ -196,8 +177,8 @@ public:
             pangolin::FinishFrame();
         }
 
-        pangolin::DestroyWindow("Point Cloud Tuning");
-        pcl::getTransformation(trans_x, trans_y, trans_z, rot_x, rot_y, rot_z, tuningtransform);
+        pangolin::DestroyWindow("Loop Closure Tuning");
+        pcl::getTransformation(trans_x, trans_y, trans_z, DEG2RAD(rot_x), DEG2RAD(rot_y), DEG2RAD(rot_z), tuningtransform);
         return fitness_score;
     }
 
