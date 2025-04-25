@@ -118,7 +118,7 @@ public:
         }
         if (reject_this_loop)
         {
-            LOG_WARN("dartion_time = %.2f. manually reject this loop closure! loop closure failed by %s!", dartion_time, type.c_str());
+            LOG_ERROR("dartion_time = %.2f. manually reject this loop closure! loop closure failed by %s!", dartion_time, type.c_str());
             return;
         }
 #endif

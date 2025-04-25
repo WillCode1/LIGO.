@@ -101,9 +101,15 @@ public:
         pangolin::Var<float> rot_y("ui.Pitch (rad)", 0.0f, RAD2DEG(-0.2f), RAD2DEG(0.2f));
         pangolin::Var<float> rot_z("ui.Yaw (rad)", 0.0f, RAD2DEG(-3.14f), RAD2DEG(3.14f));
         pangolin::Var<bool> reset("ui.Reset", false, false);
-        pangolin::Var<float> fitness_score("ui.Score", 1.0f);
         pangolin::Var<bool> screenshot("ui.Screen Shot", false, false);
-        pangolin::Var<bool> reject_loop("ui.Reject loop", false, false);
+        pangolin::Var<bool> reject_loop("ui.Reject Loop", false, false);
+        pangolin::Var<float> fitness_score("ui.Score", 1.0f);
+        pangolin::Var<bool> view_front("ui.View Front", false, false);
+        pangolin::Var<bool> view_back("ui.View Back", false, false);
+        pangolin::Var<bool> view_left("ui.View Left", false, false);
+        pangolin::Var<bool> view_right("ui.View Right", false, false);
+        pangolin::Var<bool> view_top("ui.View Top", false, false);
+        pangolin::Var<bool> view_bottom("ui.View Bottom", false, false);
 
         bool first_run = true;
         while (!pangolin::ShouldQuit())
@@ -138,6 +144,57 @@ public:
             if (reject_loop.GuiChanged())
             {
                 reject_this_loop = true;
+                pangolin::Quit();
+            }
+
+            // 检测视图切换
+            if (view_front.GuiChanged())
+            {
+                Eigen::Vector3f eye(center.x(), center.y() - distance, center.z());
+                Eigen::Vector3f up(0, 0, 1);
+                s_cam.SetModelViewMatrix(pangolin::ModelViewLookAt(eye.x(), eye.y(), eye.z(),
+                                                                   center.x(), center.y(), center.z(),
+                                                                   up.x(), up.y(), up.z()));
+            }
+            if (view_back.GuiChanged())
+            {
+                Eigen::Vector3f eye(center.x(), center.y() + distance, center.z());
+                Eigen::Vector3f up(0, 0, 1);
+                s_cam.SetModelViewMatrix(pangolin::ModelViewLookAt(eye.x(), eye.y(), eye.z(),
+                                                                   center.x(), center.y(), center.z(),
+                                                                   up.x(), up.y(), up.z()));
+            }
+            if (view_left.GuiChanged())
+            {
+                Eigen::Vector3f eye(center.x() - distance, center.y(), center.z());
+                Eigen::Vector3f up(0, 0, 1);
+                s_cam.SetModelViewMatrix(pangolin::ModelViewLookAt(eye.x(), eye.y(), eye.z(),
+                                                                   center.x(), center.y(), center.z(),
+                                                                   up.x(), up.y(), up.z()));
+            }
+            if (view_right.GuiChanged())
+            {
+                Eigen::Vector3f eye(center.x() + distance, center.y(), center.z());
+                Eigen::Vector3f up(0, 0, 1);
+                s_cam.SetModelViewMatrix(pangolin::ModelViewLookAt(eye.x(), eye.y(), eye.z(),
+                                                                   center.x(), center.y(), center.z(),
+                                                                   up.x(), up.y(), up.z()));
+            }
+            if (view_top.GuiChanged())
+            {
+                Eigen::Vector3f eye(center.x(), center.y(), center.z() + distance);
+                Eigen::Vector3f up(0, 1, 0);
+                s_cam.SetModelViewMatrix(pangolin::ModelViewLookAt(eye.x(), eye.y(), eye.z(),
+                                                                   center.x(), center.y(), center.z(),
+                                                                   up.x(), up.y(), up.z()));
+            }
+            if (view_bottom.GuiChanged())
+            {
+                Eigen::Vector3f eye(center.x(), center.y(), center.z() - distance);
+                Eigen::Vector3f up(0, -1, 0);
+                s_cam.SetModelViewMatrix(pangolin::ModelViewLookAt(eye.x(), eye.y(), eye.z(),
+                                                                   center.x(), center.y(), center.z(),
+                                                                   up.x(), up.y(), up.z()));
             }
 
             // 激活3D显示
@@ -181,11 +238,4 @@ public:
         pcl::getTransformation(trans_x, trans_y, trans_z, DEG2RAD(rot_x), DEG2RAD(rot_y), DEG2RAD(rot_z), tuningtransform);
         return fitness_score;
     }
-
-public:
-    std::vector<float> trans_state = std::vector<float>(6, 0);
-    std::vector<float> offset = std::vector<float>(6, 0.1);
-    std::vector<float> trans_state_backup;
-    int trans_state_index = 0;
-    int offset_index = 0;
 };
