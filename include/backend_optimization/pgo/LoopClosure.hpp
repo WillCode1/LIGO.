@@ -105,22 +105,22 @@ public:
         }
 
         float x, y, z, roll, pitch, yaw;
-        Eigen::Affine3f correctionLidarFrame;
+        Eigen::Affine3f correctionLidarFrame, tuningLidarFrame;
         correctionLidarFrame = gicp.getFinalTransformation();
+        tuningLidarFrame.setIdentity();
         float noiseScore = gicp.getFitnessScore();
 
 #if 1
         if (is_vaild_loop_time_period(dartion_time, loop_vaild_period["manually"]))
         {
-            pcl::getTranslationAndEulerAngles(correctionLidarFrame, mclc.trans_state[0], mclc.trans_state[1], mclc.trans_state[2], mclc.trans_state[3], mclc.trans_state[4], mclc.trans_state[5]);
-            noiseScore = mclc.manually_adjust_loop_closure(ref_near_keyframe_cloud, cur_keyframe_cloud, correctionLidarFrame);
+            noiseScore = mclc.manually_adjust_loop_closure(ref_near_keyframe_cloud, cur_keyframe_cloud, tuningLidarFrame);
         }
 #endif
 
         // Get current frame wrong pose
         Eigen::Affine3f tWrong = pclPointToAffine3f(copy_keyframe_pose6d->points[loop_key_cur]);
         // Get current frame corrected pose
-        Eigen::Affine3f tCorrect = correctionLidarFrame * tWrong;
+        Eigen::Affine3f tCorrect = correctionLidarFrame * tuningLidarFrame * tWrong;
         pcl::getTranslationAndEulerAngles(tCorrect, x, y, z, roll, pitch, yaw);
         gtsam::Pose3 poseFrom = gtsam::Pose3(gtsam::Rot3::RzRyRx(roll, pitch, yaw), gtsam::Point3(x, y, z));
         // Get reference frame pose

@@ -127,7 +127,7 @@ public:
         }
     }
 
-    double manually_adjust_loop_closure(PointCloudType::Ptr submap, PointCloudType::Ptr scan, Eigen::Affine3f &transform)
+    double manually_adjust_loop_closure(PointCloudType::Ptr submap, PointCloudType::Ptr scan, Eigen::Affine3f &tuningtransform)
     {
         // 创建Pangolin窗口
         pangolin::CreateWindowAndBind("Point Cloud Tuning", 1280, 720);
@@ -150,9 +150,11 @@ public:
         pangolin::Var<float> trans_x("ui.X Translation", 0.0f, -1.0f, 1.0f);
         pangolin::Var<float> trans_y("ui.Y Translation", 0.0f, -1.0f, 1.0f);
         pangolin::Var<float> trans_z("ui.Z Translation", 0.0f, -1.0f, 1.0f);
+        pangolin::Var<float> rot_x("ui.X Rotation (rad)", 0.0f, -0.2f, 0.2f);
+        pangolin::Var<float> rot_y("ui.Y Rotation (rad)", 0.0f, -0.2f, 0.2f);
         pangolin::Var<float> rot_z("ui.Z Rotation (rad)", 0.0f, -3.14f, 3.14f);
+        pangolin::Var<float> fitness_score("ui.Fitness Score", 1.0f);
 
-        // 主循环
         while (!pangolin::ShouldQuit())
         {
             // 清除屏幕
@@ -171,13 +173,13 @@ public:
             glEnd();
 
             // 计算变换
-            Eigen::Affine3f transform = Eigen::Affine3f::Identity();
-            transform.translation() = Eigen::Vector3f(trans_x, trans_y, trans_z);
-            transform.rotate(Eigen::AngleAxisf(rot_z, Eigen::Vector3f::UnitZ()));
+            tuningtransform.translation() = Eigen::Vector3f(trans_x, trans_y, trans_z);
+            tuningtransform.rotate(Eigen::AngleAxisf(rot_z, Eigen::Vector3f::UnitZ()) *
+                                   Eigen::AngleAxisf(rot_y, Eigen::Vector3f::UnitY()) *
+                                   Eigen::AngleAxisf(rot_x, Eigen::Vector3f::UnitX()));
 
-            // 变换扫描点云
             PointCloudType::Ptr transformed_scan(new PointCloudType);
-            pcl::transformPointCloud(*scan, *transformed_scan, transform);
+            pcl::transformPointCloud(*scan, *transformed_scan, tuningtransform);
 
             // 绘制变换后的扫描点云（绿色）
             glColor3f(0.0f, 1.0f, 0.0f);
@@ -188,21 +190,15 @@ public:
             }
             glEnd();
 
-            // 计算并打印适配度评分
-            if (pangolin::GuiVarHasChanged())
-            {
-                double fs = getFitnessScore(submap, scan, transform, 2);
-                std::cout << "适配度评分: " << fs << std::endl;
-                // pangolin::Text("Hello, Pangolin!", 10, 10);
-                // pangolin::default_font().Text("你好，世界！").Draw(10, 10, 0);
-            }
+            fitness_score = getFitnessScore(submap, scan, tuningtransform, 2);
 
             // 完成帧渲染
             pangolin::FinishFrame();
         }
 
         pangolin::DestroyWindow("Point Cloud Tuning");
-        return 0;
+        pcl::getTransformation(trans_x, trans_y, trans_z, rot_x, rot_y, rot_z, tuningtransform);
+        return fitness_score;
     }
 
 public:
