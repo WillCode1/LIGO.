@@ -103,13 +103,14 @@ public:
         pangolin::Var<bool> reset("ui.Reset", false, false);
         pangolin::Var<bool> screenshot("ui.Screen Shot", false, false);
         pangolin::Var<bool> reject_loop("ui.Reject Loop", false, false);
+        pangolin::Var<bool> confirm_loop("ui.Confirm Loop", false, false);
         pangolin::Var<float> fitness_score("ui.Score", 1.0f);
+        pangolin::Var<bool> view_top("ui.View Top", false, false);
+        pangolin::Var<bool> view_bottom("ui.View Bottom", false, false);
         pangolin::Var<bool> view_front("ui.View Front", false, false);
         pangolin::Var<bool> view_back("ui.View Back", false, false);
         pangolin::Var<bool> view_left("ui.View Left", false, false);
         pangolin::Var<bool> view_right("ui.View Right", false, false);
-        pangolin::Var<bool> view_top("ui.View Top", false, false);
-        pangolin::Var<bool> view_bottom("ui.View Bottom", false, false);
 
         bool first_run = true;
         while (!pangolin::ShouldQuit())
@@ -140,6 +141,12 @@ public:
                 std::cout << "截屏已保存为 " << ss.str() << std::endl;
             }
 #endif
+
+            if (confirm_loop.GuiChanged())
+            {
+                pangolin::Quit();
+                break;
+            }
 
             if (reject_loop.GuiChanged())
             {

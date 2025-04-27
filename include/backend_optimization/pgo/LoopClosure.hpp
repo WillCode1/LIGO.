@@ -113,7 +113,7 @@ public:
         tuningLidarFrame.setIdentity();
         float noiseScore = gicp.getFitnessScore();
 
-#if 1
+#if 0
         bool reject_this_loop = false;
         if (is_vaild_loop_time_period(dartion_time, loop_vaild_period["manually"]))
         {
@@ -281,6 +281,22 @@ public:
         }
 #endif
 
+#endif
+
+#if 1
+        bool reject_this_loop = false;
+        if (is_vaild_loop_time_period(dartion_time, loop_vaild_period["manually"]))
+        {
+            isABlocked.store(true);
+            noiseScore = mclc.manually_adjust_loop_closure(ref_near_keyframe_cloud, cur_keyframe_cloud, tuningLidarFrame, reject_this_loop);
+            isABlocked.store(false);
+            cv.notify_one();
+        }
+        if (reject_this_loop)
+        {
+            LOG_ERROR("dartion_time = %.2f. manually reject this loop closure! loop closure failed by %s!", dartion_time, type.c_str());
+            return;
+        }
 #endif
 
         last_loop_time = dartion_time;
