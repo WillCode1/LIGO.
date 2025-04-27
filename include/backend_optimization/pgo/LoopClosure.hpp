@@ -1,5 +1,7 @@
 #pragma once
 #include <unordered_map>
+#include <condition_variable>
+#include <atomic>
 #include <pcl/search/kdtree.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/registration/icp.h>
@@ -11,7 +13,8 @@
 class LoopClosure
 {
 public:
-    LoopClosure(const std::shared_ptr<ScanContext::SCManager> scManager)
+    LoopClosure(const std::shared_ptr<ScanContext::SCManager> scManager, std::condition_variable &cv, std::atomic<bool> &isABlocked)
+        : cv(cv), isABlocked(isABlocked)
     {
         copy_keyframe_pose6d.reset(new pcl::PointCloud<PointXYZIRPYT>());
         kdtree_history_keyframe_pose.reset(new pcl::KdTreeFLANN<PointXYZIRPYT>());
@@ -114,7 +117,10 @@ public:
         bool reject_this_loop = false;
         if (is_vaild_loop_time_period(dartion_time, loop_vaild_period["manually"]))
         {
+            isABlocked.store(true);
             noiseScore = mclc.manually_adjust_loop_closure(ref_near_keyframe_cloud, cur_keyframe_cloud, tuningLidarFrame, reject_this_loop);
+            isABlocked.store(false);
+            cv.notify_one();
         }
         if (reject_this_loop)
         {
@@ -397,6 +403,9 @@ public:
     }
 
 public:
+    std::condition_variable &cv;
+    std::atomic<bool> &isABlocked;
+
     std::unordered_map<std::string, std::vector<double>> loop_vaild_period;
     std::mutex loop_mtx;
     int loop_keyframe_num_thld = 50;
