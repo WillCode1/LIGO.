@@ -117,6 +117,21 @@ public:
         bool reject_this_loop = false;
         if (is_vaild_loop_time_period(dartion_time, loop_vaild_period["manually"]))
         {
+            // Get current frame wrong pose
+            Eigen::Affine3f tWrong = pclPointToAffine3f(copy_keyframe_pose6d->points[loop_key_cur]);
+            // Get current frame corrected pose
+            Eigen::Affine3f tCorrect = correctionLidarFrame * tWrong;
+            pcl::getTranslationAndEulerAngles(tCorrect, x, y, z, roll, pitch, yaw);
+
+            PointXYZIRPYT pose_correct;
+            pose_correct.x = x;
+            pose_correct.y = y;
+            pose_correct.z = z;
+            pose_correct.roll = roll;
+            pose_correct.pitch = pitch;
+            pose_correct.yaw = yaw;
+            *cur_keyframe_cloud = *pointcloudKeyframeToWorld(keyframe_scan[loop_key_cur], pose_correct);
+
             isABlocked.store(true);
             noiseScore = mclc.manually_adjust_loop_closure(ref_near_keyframe_cloud, cur_keyframe_cloud, tuningLidarFrame, reject_this_loop);
             isABlocked.store(false);
@@ -132,7 +147,7 @@ public:
         // Get current frame wrong pose
         Eigen::Affine3f tWrong = pclPointToAffine3f(copy_keyframe_pose6d->points[loop_key_cur]);
         // Get current frame corrected pose
-        Eigen::Affine3f tCorrect = correctionLidarFrame * tuningLidarFrame * tWrong;
+        Eigen::Affine3f tCorrect = tuningLidarFrame * correctionLidarFrame * tWrong;
         pcl::getTranslationAndEulerAngles(tCorrect, x, y, z, roll, pitch, yaw);
         gtsam::Pose3 poseFrom = gtsam::Pose3(gtsam::Rot3::RzRyRx(roll, pitch, yaw), gtsam::Point3(x, y, z));
         // Get reference frame pose
@@ -200,11 +215,11 @@ public:
                 return cross.norm() / direction.norm();
             };
 
-            tmp1 = calculateAngle(direction_rp1, direction_rp2);        // 小，ref按直线运动
-            tmp2 = calculateAngle(direction_cp0, direction_cp1);        // 小，当前按直线运动
-            tmp3 = calculateAngle(direction_cp2, direction_rp1);        // ref和当前运动方向修正后方向，判断修正后方向平行
-            tmp4 = calculateAngle(direction_cp1, direction_rp1);        // ref和当前运动方向修正前方向，用于提取跑偏后的情况
-            tmp5 = calculateAngle(direction_cp1, direction_cp2);        // 当前修正的delta方向
+            tmp1 = calculateAngle(direction_rp1, direction_rp2); // 小，ref按直线运动
+            tmp2 = calculateAngle(direction_cp0, direction_cp1); // 小，当前按直线运动
+            tmp3 = calculateAngle(direction_cp2, direction_rp1); // ref和当前运动方向修正后方向，判断修正后方向平行
+            tmp4 = calculateAngle(direction_cp1, direction_rp1); // ref和当前运动方向修正前方向，用于提取跑偏后的情况
+            tmp5 = calculateAngle(direction_cp1, direction_cp2); // 当前修正的delta方向
 
 #if 1
             // if (tmp1 < 2 && tmp2 < 2 && tmp3 > 5 && tmp3 < 18 || tmp5 > 70 && loop_dis > 7 || loop_dis > 30)
@@ -232,8 +247,8 @@ public:
                     return;
                 }
             }
-        }
 #endif
+        }
 
 #if 1
         int point_in_range_num = 0;
@@ -269,14 +284,22 @@ public:
         else
         {
             LOG_INFO("points_num_out_of_range  = %d, total = %lu, outof_per = %f.",
-                      points_num_out_of_range, cur_keyframe_cloud->points.size(),
-                      points_num_out_of_range * 1.0 / cur_keyframe_cloud->points.size());
+                     points_num_out_of_range, cur_keyframe_cloud->points.size(),
+                     points_num_out_of_range * 1.0 / cur_keyframe_cloud->points.size());
         }
 #endif
 
 #endif
 
 #if 1
+        PointXYZIRPYT pose_correct;
+        pose_correct.x = x;
+        pose_correct.y = y;
+        pose_correct.z = z;
+        pose_correct.roll = roll;
+        pose_correct.pitch = pitch;
+        pose_correct.yaw = yaw;
+        *cur_keyframe_cloud = *pointcloudKeyframeToWorld(keyframe_scan[loop_key_cur], pose_correct);
         bool reject_this_loop = false;
         if (is_vaild_loop_time_period(dartion_time, loop_vaild_period["manually"]))
         {
