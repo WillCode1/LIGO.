@@ -122,7 +122,7 @@ public:
             Eigen::Affine3f tCorrect = correctionLidarFrame * tWrong;
 
             isABlocked.store(true);
-            noiseScore = mclc.manually_adjust_loop_closure(ref_near_keyframe_cloud, keyframe_scan[loop_key_cur], tCorrect, tuningLidarFrame, reject_this_loop);
+            noiseScore = mclc.manually_adjust_loop_closure(ref_near_keyframe_cloud, keyframe_scan[loop_key_cur], copy_keyframe_pose6d, tCorrect, tuningLidarFrame, reject_this_loop);
             isABlocked.store(false);
             cv.notify_one();
         }
@@ -284,7 +284,7 @@ public:
         if (is_vaild_loop_time_period(dartion_time, loop_vaild_period["manually"]))
         {
             isABlocked.store(true);
-            noiseScore = mclc.manually_adjust_loop_closure(ref_near_keyframe_cloud, keyframe_scan[loop_key_cur], tCorrect, tuningLidarFrame, reject_this_loop);
+            noiseScore = mclc.manually_adjust_loop_closure(ref_near_keyframe_cloud, keyframe_scan[loop_key_cur], copy_keyframe_pose6d, tCorrect, tuningLidarFrame, reject_this_loop);
             isABlocked.store(false);
             cv.notify_one();
         }

@@ -44,7 +44,7 @@ public:
             return (std::numeric_limits<double>::max());
     }
 
-    double manually_adjust_loop_closure(PointCloudType::Ptr submap, PointCloudType::Ptr keyframe,
+    double manually_adjust_loop_closure(PointCloudType::Ptr submap, PointCloudType::Ptr keyframe, pcl::PointCloud<PointXYZIRPYT>::Ptr keyframe_pose6d,
                                         const Eigen::Affine3f &posetransform, Eigen::Affine3f &tuningLidarFrame, bool &reject_this_loop)
     {
         // 计算点云边界
@@ -221,8 +221,8 @@ public:
             tuningLidarFrame.setIdentity();
             tuningLidarFrame.translation() = Eigen::Vector3f(trans_x, trans_y, trans_z);
             tuningLidarFrame.rotate(Eigen::AngleAxisf(DEG2RAD(rot_z), Eigen::Vector3f::UnitZ()) *
-                                       Eigen::AngleAxisf(DEG2RAD(rot_y), Eigen::Vector3f::UnitY()) *
-                                       Eigen::AngleAxisf(DEG2RAD(rot_x), Eigen::Vector3f::UnitX()));
+                                    Eigen::AngleAxisf(DEG2RAD(rot_y), Eigen::Vector3f::UnitY()) *
+                                    Eigen::AngleAxisf(DEG2RAD(rot_x), Eigen::Vector3f::UnitX()));
 
             PointCloudType::Ptr transformed_scan(new PointCloudType);
             pcl::transformPointCloud(*keyframe, *transformed_scan, posetransform * tuningLidarFrame);
@@ -234,6 +234,17 @@ public:
             {
                 glVertex3f(point.x, point.y, point.z);
             }
+            glEnd();
+
+            // 绘制轨迹线
+            glLineWidth(2);
+            glColor3f(1.0, 1.0, 0.0); // 黄色轨迹
+            glBegin(GL_LINE_STRIP);
+            for (auto i = keyframe_pose6d->points.size() - 40; i < keyframe_pose6d->points.size() - 1; ++i)
+            {
+                glVertex3f(keyframe_pose6d->points[i].x, keyframe_pose6d->points[i].y, keyframe_pose6d->points[i].z);
+            }
+            glVertex3f(center.x(), center.y(), center.z());
             glEnd();
 
             fitness_score = getFitnessScore(submap, keyframe, posetransform * tuningLidarFrame, 2);
