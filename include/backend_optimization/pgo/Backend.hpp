@@ -40,8 +40,6 @@ public:
 
         FileOperation::createDirectoryOrRecreate(keyframe_path);
         FileOperation::createDirectoryOrRecreate(scd_path);
-        FileOperation::createDirectoryOrRecreate(PCD_FILE_DIR("src/"));
-        FileOperation::createDirectoryOrRecreate(PCD_FILE_DIR("tag/"));
     }
 
     void run(PointXYZIRPYT &this_pose6d, PointCloudType::Ptr &feats_undistort, PointCloudType::Ptr &submap_fix)
