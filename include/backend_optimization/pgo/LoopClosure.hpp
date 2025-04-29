@@ -110,6 +110,7 @@ public:
         bool reject_this_loop = false;
         float x, y, z, roll, pitch, yaw;
         Eigen::Affine3f correctionLidarFrame, posetransform, tuningLidarFrame;
+        tuningLidarFrame.setIdentity();
         correctionLidarFrame = gicp.getFinalTransformation();
         float noiseScore = gicp.getFitnessScore();
 

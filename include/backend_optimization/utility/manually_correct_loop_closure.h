@@ -237,7 +237,7 @@ public:
             glEnd();
 
             // 绘制轨迹线
-            glLineWidth(2);
+            glLineWidth(3);
             glColor3f(1.0, 1.0, 0.0); // 黄色轨迹
             glBegin(GL_LINE_STRIP);
             for (auto i = keyframe_pose6d->points.size() - 40; i < keyframe_pose6d->points.size() - 1; ++i)
