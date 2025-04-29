@@ -113,7 +113,7 @@ public:
         correctionLidarFrame = gicp.getFinalTransformation();
         float noiseScore = gicp.getFitnessScore();
 
-#if 1
+#if 0
         if (is_vaild_loop_time_period(dartion_time, loop_vaild_period["manually"]))
         {
             // Get current frame wrong pose
