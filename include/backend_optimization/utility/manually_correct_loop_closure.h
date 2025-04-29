@@ -8,13 +8,13 @@
 class ManuallyCorrectLoopClosure
 {
 public:
-    double getFitnessScore(PointCloudType::Ptr submap, PointCloudType::Ptr scan, const Eigen::Affine3f &trans, double max_range)
+    double getFitnessScore(PointCloudType::Ptr submap, PointCloudType::Ptr keyframe, const Eigen::Affine3f &trans, double max_range)
     {
         double fitness_score = 0.0;
 
         // Transform the input dataset using the final transformation
         PointCloudType::Ptr scan_tmp(new PointCloudType);
-        pcl::transformPointCloud(*scan, *scan_tmp, trans);
+        pcl::transformPointCloud(*keyframe, *scan_tmp, trans);
 
         pcl::search::KdTree<PointType> kdtree;
         kdtree.setInputCloud(submap);
@@ -44,12 +44,13 @@ public:
             return (std::numeric_limits<double>::max());
     }
 
-    double manually_adjust_loop_closure(PointCloudType::Ptr submap, PointCloudType::Ptr scan, Eigen::Affine3f &tuningtransform, bool &reject_this_loop)
+    double manually_adjust_loop_closure(PointCloudType::Ptr submap, PointCloudType::Ptr keyframe,
+                                        const Eigen::Affine3f &posetransform, Eigen::Affine3f &tuningLidarFrame, bool &reject_this_loop)
     {
         // 计算点云边界
         float min_x = std::numeric_limits<float>::max(), max_x = -min_x;
         float min_y = min_x, max_y = -min_x, min_z = min_x, max_z = -min_x;
-        for (const auto &point : scan->points)
+        for (const auto &point : keyframe->points)
         {
             min_x = std::min(min_x, point.x);
             max_x = std::max(max_x, point.x);
@@ -58,7 +59,7 @@ public:
             min_z = std::min(min_z, point.z);
             max_z = std::max(max_z, point.z);
         }
-        Eigen::Vector3f center((min_x + max_x) / 2, (min_y + max_y) / 2, (min_z + max_z) / 2);
+        Eigen::Vector3f center = posetransform.translation();
         float size = std::max({max_x - min_x, max_y - min_y, max_z - min_z});
         float distance = 40;
 
@@ -217,14 +218,14 @@ public:
             glEnd();
 
             // 计算变换
-            tuningtransform.setIdentity();
-            tuningtransform.translation() = Eigen::Vector3f(trans_x, trans_y, trans_z);
-            tuningtransform.rotate(Eigen::AngleAxisf(DEG2RAD(rot_z), Eigen::Vector3f::UnitZ()) *
-                                   Eigen::AngleAxisf(DEG2RAD(rot_y), Eigen::Vector3f::UnitY()) *
-                                   Eigen::AngleAxisf(DEG2RAD(rot_x), Eigen::Vector3f::UnitX()));
+            tuningLidarFrame.setIdentity();
+            tuningLidarFrame.translation() = Eigen::Vector3f(trans_x, trans_y, trans_z);
+            tuningLidarFrame.rotate(Eigen::AngleAxisf(DEG2RAD(rot_z), Eigen::Vector3f::UnitZ()) *
+                                       Eigen::AngleAxisf(DEG2RAD(rot_y), Eigen::Vector3f::UnitY()) *
+                                       Eigen::AngleAxisf(DEG2RAD(rot_x), Eigen::Vector3f::UnitX()));
 
             PointCloudType::Ptr transformed_scan(new PointCloudType);
-            pcl::transformPointCloud(*scan, *transformed_scan, tuningtransform);
+            pcl::transformPointCloud(*keyframe, *transformed_scan, posetransform * tuningLidarFrame);
 
             // 绘制变换后的扫描点云（绿色）
             glColor3f(0.0f, 1.0f, 0.0f);
@@ -235,14 +236,14 @@ public:
             }
             glEnd();
 
-            fitness_score = getFitnessScore(submap, scan, tuningtransform, 2);
+            fitness_score = getFitnessScore(submap, keyframe, posetransform * tuningLidarFrame, 2);
 
             // 完成帧渲染
             pangolin::FinishFrame();
         }
 
         pangolin::DestroyWindow("Loop Closure Tuning");
-        pcl::getTransformation(trans_x, trans_y, trans_z, DEG2RAD(rot_x), DEG2RAD(rot_y), DEG2RAD(rot_z), tuningtransform);
+        pcl::getTransformation(trans_x, trans_y, trans_z, DEG2RAD(rot_x), DEG2RAD(rot_y), DEG2RAD(rot_z), tuningLidarFrame);
         return fitness_score;
     }
 };
