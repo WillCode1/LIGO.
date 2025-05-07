@@ -240,10 +240,14 @@ public:
             glLineWidth(3);
             glColor3f(1.0, 1.0, 0.0); // 黄色轨迹
             glBegin(GL_LINE_STRIP);
-            for (auto i = keyframe_pose6d->points.size() - 40; i < keyframe_pose6d->points.size() - 1; ++i)
+            for (auto i = 0; i < keyframe_pose6d->points.size() - 1; ++i)
             {
                 glVertex3f(keyframe_pose6d->points[i].x, keyframe_pose6d->points[i].y, keyframe_pose6d->points[i].z);
             }
+            glColor3f(0.0, 0.0, 1.0); // 黄色轨迹
+            glVertex3f(keyframe_pose6d->points[keyframe_pose6d->points.size() - 1].x,
+                       keyframe_pose6d->points[keyframe_pose6d->points.size() - 1].y,
+                       keyframe_pose6d->points[keyframe_pose6d->points.size() - 1].z);
             glVertex3f(center.x(), center.y(), center.z());
             glEnd();
 
