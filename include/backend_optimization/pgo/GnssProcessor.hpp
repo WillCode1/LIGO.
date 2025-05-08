@@ -63,7 +63,7 @@ public:
           header_msg.covariance(2) > gpsCovThreshold[2] || header_msg.covariance(3) > gpsCovThreshold[3] ||
           header_msg.covariance(4) > gpsCovThreshold[4] || header_msg.covariance(5) > gpsCovThreshold[5])
       {
-        LOG_WARN_COND(false, "GPS noise covariance is too large (%f, %f, %f, %f, %f, %f), ignored!",
+        LOG_WARN_COND(true, "GPS noise covariance is too large (%f, %f, %f, %f, %f, %f), ignored!",
                       header_msg.covariance(0), header_msg.covariance(1),
                       header_msg.covariance(2), header_msg.covariance(3),
                       header_msg.covariance(4), header_msg.covariance(5));

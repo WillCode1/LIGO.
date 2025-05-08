@@ -169,7 +169,7 @@ private:
             gtsam::GPSFactor gps_factor(keyframe_pose6d_optimized->size(), gtsam::Point3(thisGPS.lidar_pos_fix(0), thisGPS.lidar_pos_fix(1), thisGPS.lidar_pos_fix(2)), gnss_noise);
             gtsam_graph.add(gps_factor);
             loop_is_closed = true;
-            LOG_WARN_COND(false, "dartion_time = %.2f.GPS Factor Added, current_gnss_interval = %.3f sec, noise = (%.3f, %.3f, %.3f).",
+            LOG_WARN_COND(true, "dartion_time = %.2f.GPS Factor Added, current_gnss_interval = %.3f sec, noise = (%.3f, %.3f, %.3f).",
                           thisGPS.timestamp - keyframe_pose6d_optimized->front().time, thisGPS.current_gnss_interval, Vector3(0), Vector3(1), Vector3(2));
             // LOG_INFO("fix_lidar_pos = (%.3f, %.3f, %.3f).", thisGPS.lidar_pos_fix(0), thisGPS.lidar_pos_fix(1), thisGPS.lidar_pos_fix(2));
 
